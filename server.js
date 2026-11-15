@@ -75,6 +75,10 @@ app.get('/api/filters', async (req, res) => {
   }
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({ ok: true, uptime: Math.round(process.uptime()) });
+});
+
 app.get('/api/search', async (req, res) => {
   const term = String(req.query.q || '').trim();
   if (!term) {
@@ -145,3 +149,24 @@ app.get('/proxy', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Sample Finder rodando em http://localhost:${PORT}`);
 });
+
+const KEEPALIVE_INTERVAL = 10 * 60 * 1000;
+
+function startKeepAlive() {
+  const base = process.env.RENDER_EXTERNAL_URL;
+  if (!process.env.RENDER || !base) return;
+  const ping = async () => {
+    try {
+      await fetch(`${base}/api/health`, { signal: AbortSignal.timeout(15000) });
+    } catch {
+      // falha momentânea: o próximo ciclo tenta de novo
+    }
+  };
+  const tick = () => {
+    ping();
+    setTimeout(tick, KEEPALIVE_INTERVAL + Math.floor(Math.random() * 60000));
+  };
+  setTimeout(tick, 30000);
+}
+
+startKeepAlive();

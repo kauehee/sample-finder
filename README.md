@@ -50,6 +50,16 @@ Sem a chave, as outras duas fontes continuam funcionando normalmente.
    - A variável `PORT` é injetada pelo Render automaticamente.
 4. (Opcional) Em *Environment*, adicione `FSOUND_API_KEY` para habilitar o FreeSound.
 
+## Anti-hibernação (plano grátis do Render)
+
+O plano grátis do Render adormece o serviço após ~15 min sem requisições. Para evitar isso, o próprio app faz um *keep-alive*: quando detecta que está rodando no Render (`RENDER_EXTERNAL_URL`), ele consulta `/api/health` pela URL pública a cada ~10 min (com variação aleatória), o que reseta o contador de inatividade — na prática, a instância não hiberna.
+
+Limites honestos:
+
+- É um mecanismo interno: se o processo reiniciar (deploy novo, queda), ele volta a funcionar sozinho.
+- O Render pode mudar esse comportamento a qualquer momento; alternativa externa robusta é um monitor HTTP gratuito (ex.: UptimeRobot) pingando a URL a cada 5–10 min.
+- Não há custo extra enquanto o plano for grátis.
+
 ## Estrutura
 
 ```
