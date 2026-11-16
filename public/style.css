@@ -119,6 +119,14 @@ h1 {
 
 .filter-group { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
 
+.filters-label {
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+  align-self: center;
+  margin-right: 2px;
+}
+
 .chip {
   padding: 8px 14px;
   font-size: 0.85rem;

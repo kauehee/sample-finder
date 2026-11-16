@@ -15,8 +15,10 @@ const bpmMax = document.getElementById('bpmMax');
 const clearFiltersBtn = document.getElementById('clearFilters');
 const filterHint = document.getElementById('filterHint');
 const chips = document.querySelectorAll('#sourceChips .chip');
+const instrumentChips = document.querySelectorAll('#instrumentChips .chip');
 
 let activeSource = 'all';
+let activeInstrument = 'all';
 let lastData = null;
 let lastTerm = '';
 
@@ -26,6 +28,15 @@ chips.forEach((chip) => {
     chip.classList.add('active');
     activeSource = chip.dataset.source;
     if (lastTerm) runSearch();
+  });
+});
+
+instrumentChips.forEach((chip) => {
+  chip.addEventListener('click', () => {
+    const val = chip.dataset.instrument;
+    activeInstrument = activeInstrument === val && val !== 'all' ? 'all' : val;
+    instrumentChips.forEach((c) => c.classList.toggle('active', c.dataset.instrument === activeInstrument));
+    render();
   });
 });
 
@@ -44,6 +55,8 @@ clearFiltersBtn.addEventListener('click', () => {
   sigFilter.value = '';
   bpmMin.value = '';
   bpmMax.value = '';
+  activeInstrument = 'all';
+  instrumentChips.forEach((c) => c.classList.toggle('active', c.dataset.instrument === 'all'));
   updateFilterHint();
   if (lastTerm) runSearch();
 });
@@ -137,6 +150,28 @@ function musicMatches(item, f) {
   return true;
 }
 
+const INSTRUMENT_KEYWORDS = {
+  drums: ['drum', 'beat', 'break', 'groove', 'rhythm'],
+  vocals: ['vocal', 'vox', 'acapella', 'a capella', 'voice', 'chant', 'sing'],
+  synth: ['synth', 'pad', 'arp', 'pluck', 'lead', 'stab'],
+  keys: ['keys', 'keyboard', 'rhodes', 'wurlitzer', 'organ', 'clav'],
+  guitar: ['guitar', 'riff', 'strum'],
+  percussion: ['perc', 'shaker', 'conga', 'bongo', 'tambourine', 'cowbell', 'cajon', 'djembe', 'timbal'],
+  piano: ['piano', 'upright', 'felt'],
+  strings: ['string', 'violin', 'viola', 'cello', 'pizzicato', 'harp'],
+  kicks: ['kick'],
+  hats: ['hat', 'hihat', 'hi-hat'],
+  snares: ['snare', 'clap', 'snap'],
+  808: ['808'],
+};
+
+function instrumentMatches(item, id) {
+  if (!id || id === 'all') return true;
+  const kws = INSTRUMENT_KEYWORDS[id] || [];
+  const hay = `${item.title || ''} ${item.genre || ''} ${item.author || ''}`.toLowerCase();
+  return kws.some((k) => new RegExp(`(^|[^a-z])${k}`).test(hay));
+}
+
 function cardHtml(item) {
   const dur = formatDuration(item.duration);
   const size = formatSize(item.size);
@@ -212,11 +247,12 @@ function render() {
     (r) =>
       licenseMatches(r.license, licFilter) &&
       durationMatches(r.duration, durFilter) &&
+      instrumentMatches(r, activeInstrument) &&
       musicMatches(r, musicFilter)
   );
 
   if (!filtered.length) {
-    const filtersAtivos = licFilter !== 'all' || durFilter !== 'all' || Object.keys(musicFilter).length > 0;
+    const filtersAtivos = licFilter !== 'all' || durFilter !== 'all' || activeInstrument !== 'all' || Object.keys(musicFilter).length > 0;
     emptyEl.innerHTML = `
       <p>Nenhum resultado para "${escapeHtml(data.query)}".</p>
       <p class="muted">${filtersAtivos ? 'Tente relaxar os filtros ou ' : ''}use termos mais simples ou em inglês — ex.: "drums", "synth", "ambient".</p>`;
