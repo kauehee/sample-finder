@@ -1,11 +1,13 @@
 const { searchArchive } = require('./sources/internetArchive');
 const { searchLooperman } = require('./sources/looperman');
 const { searchFreesound } = require('./sources/freesound');
+const { searchLoopmasters } = require('./sources/loopmasters');
 
 const SOURCES = {
   archive: { label: 'Internet Archive', run: searchArchive },
   looperman: { label: 'Looperman', run: searchLooperman },
   freesound: { label: 'FreeSound', run: searchFreesound },
+  loopmasters: { label: 'Loopmasters', run: searchLoopmasters },
 };
 
 function relevanceScore(item, term) {

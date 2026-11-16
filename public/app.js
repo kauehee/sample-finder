@@ -180,7 +180,7 @@ function cardHtml(item) {
     </div>`;
 }
 
-const SOURCE_LABELS = { archive: 'Internet Archive', looperman: 'Looperman', freesound: 'FreeSound' };
+const SOURCE_LABELS = { archive: 'Internet Archive', looperman: 'Looperman', freesound: 'FreeSound', loopmasters: 'Loopmasters' };
 
 resultsEl.addEventListener(
   'play',

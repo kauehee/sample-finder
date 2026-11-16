@@ -9,6 +9,7 @@ Agregador de busca de **samples, loops e áudios gratuitos**: você digita o que
 | **Internet Archive** | Samples, loops, packs e áudios CC0/Creative Commons | Direto | Nenhuma (funciona de cara) |
 | **Looperman** | Loops de produtores (drums, bass, vocal...) com BPM/gênero | Direto | Nenhuma |
 | **FreeSound** | One-shots e efeitos sonoros (CC) | Preview aqui; download exige login no site | Opcional: `FSOUND_API_KEY` |
+| **Loopmasters** | Packs **gratuitos** da loja (seção Free Samples) | Preview do demo aqui; download grátis via carrinho no site | Nenhuma |
 
 ## Rodar localmente
 
@@ -68,6 +69,7 @@ src/search.js                 # Orquestra as fontes, classifica e deduplica
 src/sources/internetArchive.js # API pública do Internet Archive (sem chave)
 src/sources/looperman.js      # Busca do Looperman via fluxo oficial do site (POST + CSRF)
 src/sources/freesound.js      # API v2 do FreeSound (chave opcional)
+src/sources/loopmasters.js    # Packs gratuitos do Loopmasters (seção Free Samples)
 public/                       # Interface (HTML/CSS/JS puros, sem build)
 ```
 
@@ -78,4 +80,5 @@ public/                       # Interface (HTML/CSS/JS puros, sem build)
 - **Play exclusivo**: dar play em um resultado pausa automaticamente os outros.
 - **FreeSound**: o preview funciona no app; o download do arquivo completo exige login gratuito no próprio site.
 - **Looperman**: os resultados vêm da busca oficial do site (mesmo fluxo que o navegador usa, incluindo token de sessão).
+- **Loopmasters**: é uma loja paga — o app inclui apenas o catálogo **gratuito** (seção Free Samples, ~12 packs). O preview é o demo oficial do pack; o download grátis é feito no site deles (carrinho + e-mail), então o card leva para a página do produto. Packs pagos nunca aparecem.
 - **Disponibilidade**: se um site mudar o layout ou aplicar bloqueio anti-bot, o app degrada com elegância — exibe um aviso e entrega os resultados das outras fontes.

@@ -59,6 +59,7 @@ const AUDIO_HOSTS = new Map([
   ['www.looperman.com', 'https://www.looperman.com/'],
   ['looperman.com', 'https://www.looperman.com/'],
   ['cdn.freesound.org', 'https://freesound.org/'],
+  ['demos.loopmasters.com', 'https://www.loopmasters.com/'],
 ]);
 
 function isAllowedHost(hostname) {
