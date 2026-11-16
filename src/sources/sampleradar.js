@@ -5,6 +5,8 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 
 let cache = { at: 0, data: null };
 const CACHE_TTL = 60 * 60 * 1000;
+const PACK_TTL = 6 * 60 * 60 * 1000;
+const packCache = new Map();
 
 async function fetchPacksIndex() {
   if (cache.data && Date.now() - cache.at < CACHE_TTL) return cache.data;
@@ -64,7 +66,7 @@ function titleMatches(title, words) {
   return words.every((w) => t.includes(norm(w)) || t.includes(w));
 }
 
-async function searchSampleRadar(term, { maxResults = 6, filters = {} } = {}) {
+async function searchSampleRadar(term, { maxResults = 15, filters = {} } = {}) {
   const packs = await fetchPacksIndex();
   const words = String(term).toLowerCase().split(/\s+/).filter((w) => w.length > 2);
   if (!words.length) return [];
@@ -72,7 +74,10 @@ async function searchSampleRadar(term, { maxResults = 6, filters = {} } = {}) {
   const matched = packs.filter((p) => titleMatches(p.title, words));
   const picked = (matched.length ? matched : packs.filter((p) => words.some((w) => p.title.toLowerCase().includes(w)))).slice(0, maxResults);
 
-  const enriched = await pool(picked, 3, async (pack) => {
+  const enriched = await pool(picked, 4, async (pack) => {
+    const hit = packCache.get(pack.pageUrl);
+    if (hit && Date.now() - hit.at < PACK_TTL) return hit.data;
+
     const res = await fetch(pack.pageUrl, {
       headers: { 'User-Agent': UA },
       signal: AbortSignal.timeout(15000),
@@ -86,7 +91,7 @@ async function searchSampleRadar(term, { maxResults = 6, filters = {} } = {}) {
     const size = sizeM ? `${sizeM[1]} MB` : null;
     const pageTitle = ($('meta[property="og:title"]').attr('content') || pack.title).replace(/\s*\|\s*MusicRadar.*$/i, '').trim();
 
-    return {
+    const item = {
       id: `sr-${pack.pageUrl.split('/').filter(Boolean).pop()}`,
       source: 'sampleradar',
       title: pageTitle,
@@ -104,6 +109,8 @@ async function searchSampleRadar(term, { maxResults = 6, filters = {} } = {}) {
       key: null,
       sig: null,
     };
+    packCache.set(pack.pageUrl, { at: Date.now(), data: item });
+    return item;
   });
 
   return enriched.filter(Boolean);

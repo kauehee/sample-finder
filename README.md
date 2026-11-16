@@ -15,6 +15,18 @@ Agregador de busca de **samples e loops gratuitos**: você digita o que procura 
 | **W. A. Production** | Previews dos packs gratuitos da loja (EDM, Future Bass, House...) | Preview baixável direto no app | Nenhuma |
 | **Unison Audio** | Packs gratuitos (vocais, drums, MIDI, lo-fi) | Demo baixável direto no app | Nenhuma |
 
+## Volume de resultados
+
+Cada busca junta até:
+
+- **Looperman**: 60 loops (3 páginas da busca oficial), com duração, BPM, tom, compasso, gênero e tamanho lidos da própria listagem — sem abrir página de detalhe;
+- **FreeSound**: 150 áudios por busca, já filtrados na API por `duration:[0 TO 120]`;
+- **Internet Archive**: 50 itens, preferindo dentro de cada item um arquivo de áudio com até 2 min;
+- **SampleRadar**: até 15 packs gratuitos (zips), com cache de 6 h por pack;
+- **Loopmasters / Producer Loops / W. A. Production / Unison**: demos oficiais até o limite do catálogo gratuito de cada loja.
+
+Na prática, tags comuns retornam **150–270 resultados**; tags de nicho ficam acima de uma página. A primeira busca leva ~10–15 s (as fontes são consultadas em paralelo e a duração dos áudios sem metadado é medida no arquivo); buscas repetidas do mesmo termo/filtro vêm do cache em memória (5 min) e respondem em milissegundos.
+
 ## Catálogo de fontes (`/catalogo`)
 
 Página separada com as **58 plataformas** de samples gratuitos (selos, portais e acervos): busca por nome/gênero e link direto para cada fonte. Oito delas estão **integradas na busca** (Internet Archive, FreeSound, Looperman, Loopmasters, SampleRadar, Producer Loops, W. A. Production, Unison Audio); as demais são catálogo de consulta — os freebies delas ficam no site oficial (cadastro/carrinho da própria empresa).
@@ -36,7 +48,7 @@ Abra `http://localhost:3000` e busque, ex.: `drum loop`, `rain ambience`, `808 b
 
 O app foi feito para achar **trechos curtos**, como os samples de uma DAW — não músicas, álbuns ou podcasts. Regras aplicadas no servidor:
 
-- A duração de cada resultado é obtida do metadado da fonte ou extraída do próprio arquivo (MP3 via `Range` + frame/Xing; WAV via cabeçalho RIFF). Itens sem metadado no Looperman são tratados como loops por definição; demos/packs sem duração confirmada ficam de fora.
+- A duração de cada resultado é obtida do metadado da fonte (Looperman, FreeSound e Archive informam em segundos) ou extraída do próprio arquivo quando falta (MP3 via `Range` + frame/Xing; WAV via cabeçalho RIFF). Demos/packs sem duração confirmada ficam de fora.
 - **Nada acima de 2 min (120 s) entra na resposta da API** — em nenhum filtro.
 - Na interface, o padrão é **Loops (até 1min)**. O seletor de Duração permite refinar (até 15 s, 15–30 s, 30–60 s) ou abrir **Tudo (até 2min)**.
 - Fontes que só oferecem **demo completo do pack** (Loopmasters, Producer Loops, W. A. Production, Unison) podem aparecer de forma esporádica quando o demo tem menos de 2 min; demos mais longos são filtrados. SampleRadar entra como pacote ZIP de loops.
@@ -47,7 +59,7 @@ Acima dos resultados há filtros de **gênero**, **tom** (key), **BPM** (faixa m
 
 Como cada filtro é aplicado:
 
-- **Looperman** aplica os filtros na busca oficial do site (`gid`, `mkey`, `tsig`, `ftempo`/`ttempo`) — resultados já vêm filtrados do servidor, com tom e compasso extraídos da página de detalhe de cada loop.
+- **Looperman** aplica os filtros na busca oficial do site (`gid`, `mkey`, `tsig`, `ftempo`/`ttempo`) — resultados já vêm filtrados do servidor, com tom e compasso lidos da listagem de cada loop.
 - **Internet Archive / FreeSound** não têm metadados de tom/BPM/compasso na busca; o app aplica um filtro residual no que consegue extrair (ex.: BPM no título) e, quando o filtro de BPM/tom/compasso está ativo, **itens sem esse metadado ficam de fora** — como no Splice, o que aparece bate com o filtro escolhido.
 - O gênero é conferido pelo nome do gênero no título/tag do item nas fontes sem busca por gênero.
 
@@ -90,7 +102,7 @@ src/search.js                 # Orquestra as fontes, mede durações e descarta 
 src/audioDuration.js          # Sonda de duração real (MP3/WAV) via requisição Range
 src/audioHosts.js             # Whitelist de CDNs + Referer exigido por cada host
 src/sources/internetArchive.js # API pública do Internet Archive (sem chave)
-src/sources/looperman.js      # Busca do Looperman via fluxo oficial do site (POST + CSRF)
+src/sources/looperman.js      # Busca do Looperman (GET paginado + parse da listagem, sem detalhe)
 src/sources/freesound.js      # API v2 do FreeSound (chave opcional)
 src/sources/loopmasters.js    # Packs gratuitos do Loopmasters (seção Free Samples)
 src/sources/sampleradar.js    # Packs WAV do MusicRadar/SampleRadar (zips diretos)
@@ -106,8 +118,8 @@ public/                       # Interface (HTML/CSS/JS puros, sem build) + catal
 - **Áudio via proxy local**: o preview e o download de todas as fontes passam por `/proxy` (whitelist: Looperman, FreeSound, Loopmasters, SampleRadar, Producer Loops, W. A. Production, Unison e Internet Archive — não é proxy aberto). Isso resolve duas limitações das fontes: proteção anti-hotlink do Looperman (exige `Referer` do próprio site) e os redirects/CDN do Internet Archive que quebram o player por CORS. O proxy repassa `Range` (seek no player) e o nome do arquivo no download.
 - **Duração**: a sonda lê apenas os primeiros 64 KB de cada áudio sem duração (com 2º Range quando há ID3 grande) e guarda o resultado em cache por 6 h. Se a fonte não informar e a sonda não conseguir medir, o item só permanece se for do Looperman (biblioteca 100% de loops) ou um pacote ZIP; caso contrário, é descartado para não arriscar entregar um áudio longo.
 - **Play exclusivo**: dar play em um resultado pausa automaticamente os outros.
-- **FreeSound**: o preview toca e baixa direto no app; o arquivo completo exige login gratuito no próprio site.
-- **Looperman**: os resultados vêm da busca oficial do site (mesmo fluxo que o navegador usa, incluindo token de sessão).
+- **FreeSound**: o preview toca e baixa direto no app; o arquivo completo exige login gratuito no próprio site. A busca pede 150 resultados já filtrados por duração ≤ 2 min.
+- **Looperman**: os resultados vêm da busca oficial do site (GET paginado, 3 páginas por busca) e todos os metadados saem da própria listagem — não há scraping da página de detalhe. Se o layout da listagem mudar, a fonte cai com aviso e as outras continuam.
 - **Loopmasters**: é uma loja paga — o app inclui apenas o catálogo **gratuito** (seção Free Samples, ~12 packs). O demo oficial toca e baixa no app; o pack completo grátis é liberado no site deles (carrinho + e-mail), então o card leva para a página do produto. Packs pagos nunca aparecem.
 - **SampleRadar**: o hub do MusicRadar lista ~285 packs gratuitos; o app encontra o pack e baixa o zip direto do CDN deles, sem cadastro.
 - **Producer Loops / W. A. Production / Unison Audio**: o app indexa as páginas de freebies dessas lojas e baixa os **demos/previews oficiais** direto no app. Os packs completos gratuitos dessas lojas são liberados por carrinho/cadastro no site delas — o card leva para a página do produto, e nunca há cobrança envolvida.

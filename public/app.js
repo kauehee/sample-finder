@@ -324,6 +324,8 @@ function render() {
   );
   const filtered = baseFiltered.filter((r) => durationMatches(r.duration, durationFilter.value));
   const hiddenByDuration = baseFiltered.length - filtered.length;
+  const hiddenReason =
+    durationFilter.value === 'loops' ? 'acima de 1min' : 'fora da faixa de duração escolhida';
 
   if (!filtered.length) {
     const filtersAtivos =
@@ -335,7 +337,7 @@ function render() {
     const notes = [];
     if (hiddenByDuration > 0) {
       notes.push(
-        `${hiddenByDuration} resultado(s) acima de 1min ficaram ocultos — mude a Duração para "Tudo (até 2min)".`
+        `${hiddenByDuration} resultado(s) ${hiddenReason} ficaram ocultos — ajuste a Duração para ver.`
       );
     }
     if (data.droppedLong > 0) {
@@ -352,7 +354,7 @@ function render() {
     resultsHead.classList.add('hidden');
     listHead.classList.add('hidden');
     const emptyCounts = ['0 resultado(s)'];
-    if (hiddenByDuration > 0) emptyCounts.push(`${hiddenByDuration} acima de 1min oculto(s)`);
+    if (hiddenByDuration > 0) emptyCounts.push(`${hiddenByDuration} ${hiddenReason} oculto(s)`);
     if (data.droppedLong > 0) emptyCounts.push(`${data.droppedLong} >2min removido(s)`);
     if (data.tookMs) emptyCounts.push(`${(data.tookMs / 1000).toFixed(1)}s`);
     resultCount.textContent = emptyCounts.join(' · ');
@@ -365,7 +367,7 @@ function render() {
   resultsHead.classList.remove('hidden');
   listHead.classList.remove('hidden');
   const counts = [`${sorted.length} resultado(s)`];
-  if (hiddenByDuration > 0) counts.push(`${hiddenByDuration} acima de 1min oculto(s)`);
+  if (hiddenByDuration > 0) counts.push(`${hiddenByDuration} ${hiddenReason} oculto(s)`);
   if (data.droppedLong > 0) counts.push(`${data.droppedLong} >2min removido(s)`);
   if (data.tookMs) counts.push(`${(data.tookMs / 1000).toFixed(1)}s`);
   resultCount.textContent = counts.join(' · ');

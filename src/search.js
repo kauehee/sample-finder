@@ -11,7 +11,39 @@ const { probeAudioDuration } = require('./audioDuration');
 // Nada acima de 2 minutos entra nos resultados. A interface usa 1 min por padrão.
 const MAX_AUDIO_SECONDS = 120;
 const DEFAULT_LOOP_SECONDS = 60;
-const PROBE_CONCURRENCY = 8;
+const PROBE_CONCURRENCY = 10;
+
+const SEARCH_CACHE_TTL = 5 * 60 * 1000;
+const SEARCH_CACHE_ERROR_TTL = 60 * 1000;
+const SEARCH_CACHE_MAX = 40;
+const searchCache = new Map();
+
+function cacheKey(term, sources, filters) {
+  const src = sources && sources.length ? [...sources].sort().join(',') : 'all';
+  const f = Object.keys(filters)
+    .sort()
+    .map((k) => `${k}=${filters[k]}`)
+    .join('&');
+  return `${term.toLowerCase()}|${src}|${f}`;
+}
+
+function cacheGet(key) {
+  const hit = searchCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - hit.at > hit.ttl) {
+    searchCache.delete(key);
+    return null;
+  }
+  return hit.data;
+}
+
+function cacheSet(key, data, ttl) {
+  if (searchCache.size >= SEARCH_CACHE_MAX) {
+    const oldest = searchCache.keys().next().value;
+    if (oldest != null) searchCache.delete(oldest);
+  }
+  searchCache.set(key, { at: Date.now(), ttl, data });
+}
 
 const SOURCES = {
   archive: { label: 'Internet Archive', run: searchArchive },
@@ -96,6 +128,10 @@ function isLoopResult(item) {
 
 async function searchAll(term, { sources, filters = {} } = {}) {
   const wanted = sources && sources.length ? sources.filter((s) => SOURCES[s]) : Object.keys(SOURCES);
+  const key = cacheKey(term, sources, filters);
+  const cached = cacheGet(key);
+  if (cached) return { ...cached, tookMs: 0, cached: true };
+
   const started = Date.now();
   const settled = await Promise.allSettled(
     wanted.map((key) => SOURCES[key].run(term, { filters }))
@@ -122,7 +158,7 @@ async function searchAll(term, { sources, filters = {} } = {}) {
   const loops = unique.filter(isLoopResult);
   loops.sort((a, b) => relevanceScore(b, term) - relevanceScore(a, term));
 
-  return {
+  const out = {
     query: term,
     results: loops,
     errors,
@@ -131,6 +167,8 @@ async function searchAll(term, { sources, filters = {} } = {}) {
     limits: { maxSeconds: MAX_AUDIO_SECONDS, defaultLoopSeconds: DEFAULT_LOOP_SECONDS },
     filters: { ...filters },
   };
+  cacheSet(key, out, errors.length ? SEARCH_CACHE_ERROR_TTL : SEARCH_CACHE_TTL);
+  return out;
 }
 
 module.exports = { searchAll };
