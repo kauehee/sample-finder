@@ -3,33 +3,28 @@ const input = document.getElementById('searchInput');
 const btn = document.getElementById('searchBtn');
 const resultsEl = document.getElementById('results');
 const emptyEl = document.getElementById('empty');
-const statusEl = document.getElementById('status');
 const warningsEl = document.getElementById('warnings');
+const resultsHead = document.getElementById('resultsHead');
+const resultCount = document.getElementById('resultCount');
+const listHead = document.getElementById('listHead');
+const activeFiltersEl = document.getElementById('activeFilters');
 const licenseFilter = document.getElementById('licenseFilter');
 const durationFilter = document.getElementById('durationFilter');
 const genreFilter = document.getElementById('genreFilter');
 const keyFilter = document.getElementById('keyFilter');
 const sigFilter = document.getElementById('sigFilter');
+const sourceFilter = document.getElementById('sourceFilter');
+const sortSelect = document.getElementById('sortSelect');
 const bpmMin = document.getElementById('bpmMin');
 const bpmMax = document.getElementById('bpmMax');
 const clearFiltersBtn = document.getElementById('clearFilters');
 const filterHint = document.getElementById('filterHint');
-const chips = document.querySelectorAll('#sourceChips .chip');
 const instrumentChips = document.querySelectorAll('#instrumentChips .chip');
 
-let activeSource = 'all';
 let activeInstrument = 'all';
 let lastData = null;
 let lastTerm = '';
-
-chips.forEach((chip) => {
-  chip.addEventListener('click', () => {
-    chips.forEach((c) => c.classList.remove('active'));
-    chip.classList.add('active');
-    activeSource = chip.dataset.source;
-    if (lastTerm) runSearch();
-  });
-});
+let searching = false;
 
 instrumentChips.forEach((chip) => {
   chip.addEventListener('click', () => {
@@ -42,23 +37,28 @@ instrumentChips.forEach((chip) => {
 
 licenseFilter.addEventListener('change', () => render());
 durationFilter.addEventListener('change', () => render());
+sortSelect.addEventListener('change', () => render());
 
-genreFilter.addEventListener('change', () => { if (lastTerm) runSearch(); });
-keyFilter.addEventListener('change', () => { if (lastTerm) runSearch(); });
-sigFilter.addEventListener('change', () => { if (lastTerm) runSearch(); });
-bpmMin.addEventListener('change', () => { if (lastTerm) runSearch(); });
-bpmMax.addEventListener('change', () => { if (lastTerm) runSearch(); });
+genreFilter.addEventListener('change', () => { if (lastTerm) runSearch(); else render(); });
+keyFilter.addEventListener('change', () => { if (lastTerm) runSearch(); else render(); });
+sigFilter.addEventListener('change', () => { if (lastTerm) runSearch(); else render(); });
+sourceFilter.addEventListener('change', () => { if (lastTerm) runSearch(); else render(); });
+bpmMin.addEventListener('change', () => { if (lastTerm) runSearch(); else render(); });
+bpmMax.addEventListener('change', () => { if (lastTerm) runSearch(); else render(); });
 
 clearFiltersBtn.addEventListener('click', () => {
   genreFilter.value = '';
   keyFilter.value = '';
   sigFilter.value = '';
+  sourceFilter.value = 'all';
+  licenseFilter.value = 'all';
+  durationFilter.value = 'all';
+  sortSelect.value = 'relevance';
   bpmMin.value = '';
   bpmMax.value = '';
   activeInstrument = 'all';
   instrumentChips.forEach((c) => c.classList.toggle('active', c.dataset.instrument === 'all'));
-  updateFilterHint();
-  if (lastTerm) runSearch();
+  if (lastTerm) runSearch(); else render();
 });
 
 form.addEventListener('submit', (e) => {
@@ -172,64 +172,135 @@ function instrumentMatches(item, id) {
   return kws.some((k) => new RegExp(`(^|[^a-z])${k}`).test(hay));
 }
 
-function cardHtml(item) {
+const SOURCE_LABELS = { archive: 'Internet Archive', looperman: 'Looperman', freesound: 'FreeSound', loopmasters: 'Loopmasters', sampleradar: 'SampleRadar', producerloops: 'Producer Loops', waproduction: 'W. A. Production', unison: 'Unison Audio' };
+
+function rowHtml(item) {
   const dur = formatDuration(item.duration);
   const size = formatSize(item.size);
-  const meta = [
-    item.author ? `<span class="badge">${escapeHtml(item.author)}</span>` : '',
-    dur ? `<span class="badge">${dur}</span>` : '',
-    size ? `<span class="badge">${size}</span>` : '',
-    item.bpm ? `<span class="badge">${escapeHtml(item.bpm)} BPM</span>` : '',
-    item.key ? `<span class="badge">Tom ${escapeHtml(item.key)}</span>` : '',
-    item.sig ? `<span class="badge">${escapeHtml(item.sig)}</span>` : '',
-    item.genre ? `<span class="badge">${escapeHtml(item.genre)}</span>` : '',
+  const sourceLabel = SOURCE_LABELS[item.source] || item.source;
+
+  const tags = [
+    `<span class="tag src src-${escapeHtml(item.source)}">${escapeHtml(sourceLabel)}</span>`,
+    item.genre ? `<span class="tag">${escapeHtml(item.genre)}</span>` : '',
+    item.author ? `<span class="tag">${escapeHtml(item.author)}</span>` : '',
+    item.sig ? `<span class="tag">${escapeHtml(item.sig)}</span>` : '',
+    size ? `<span class="tag">${escapeHtml(size)}</span>` : '',
+    dur ? `<span class="tag meta-only">${dur}</span>` : '',
+    item.bpm ? `<span class="tag meta-only">${escapeHtml(item.bpm)} BPM</span>` : '',
+    item.key ? `<span class="tag meta-only">${escapeHtml(item.key)}</span>` : '',
   ].join('');
 
   const license = item.license
-    ? `<span class="badge license">${item.licenseUrl ? `<a href="${escapeHtml(item.licenseUrl)}" target="_blank" rel="noopener">` : ''}${escapeHtml(item.license)}${item.licenseUrl ? '</a>' : ''}</span>`
+    ? `<span class="tag license">${item.licenseUrl ? `<a href="${escapeHtml(item.licenseUrl)}" target="_blank" rel="noopener">` : ''}${escapeHtml(item.license)}${item.licenseUrl ? '</a>' : ''}</span>`
     : '';
 
   const player = item.previewUrl
-    ? `<audio controls preload="none" src="${escapeHtml(item.previewUrl)}"></audio>`
-    : '<div class="card-meta">Sem preview disponível</div>';
+    ? `<button class="play" type="button" aria-label="Tocar preview" title="Tocar preview">▶</button>
+       <audio preload="none" src="${escapeHtml(item.previewUrl)}"></audio>`
+    : `<button class="play disabled" type="button" disabled title="Sem preview">—</button>`;
 
-  const actions = item.downloadUrl
+  const download = item.downloadUrl
     ? item.downloadUrl.startsWith('/')
       ? `<a class="btn download" href="${escapeHtml(item.downloadUrl)}" download="${escapeHtml(item.filename || 'audio')}">Baixar</a>`
       : `<a class="btn download" href="${escapeHtml(item.downloadUrl)}" target="_blank" rel="noopener">Baixar</a>`
-    : `<span class="btn" title="Downloads exigem login no site">Download no site</span>`;
+    : `<span class="btn ghost" title="Download no site oficial">No site</span>`;
 
   return `
-    <div class="card">
-      <div class="card-title">${escapeHtml(item.title)}</div>
-      <div class="card-meta">
-        <span class="badge source-${item.source}">${escapeHtml(item.sourceLabel || item.source)}</span>
-        ${meta}
-        ${license}
+    <div class="row">
+      <div class="row-main">
+        <div class="play-wrap">${player}</div>
+        <div class="row-info">
+          <div class="row-title" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</div>
+          <div class="row-tags">${tags}${license}</div>
+        </div>
       </div>
-      ${player}
-      <div class="card-actions">
-        ${actions}
-        <a class="btn" href="${escapeHtml(item.pageUrl)}" target="_blank" rel="noopener">Ver no site</a>
+      <div class="row-col">${dur || '–'}</div>
+      <div class="row-col">${item.key ? escapeHtml(item.key) : '–'}</div>
+      <div class="row-col">${item.bpm ? escapeHtml(item.bpm) : '–'}</div>
+      <div class="row-actions">
+        ${download}
+        <a class="btn ghost" href="${escapeHtml(item.pageUrl || '#')}" target="_blank" rel="noopener">Site</a>
       </div>
     </div>`;
 }
 
-const SOURCE_LABELS = { archive: 'Internet Archive', looperman: 'Looperman', freesound: 'FreeSound', loopmasters: 'Loopmasters', sampleradar: 'SampleRadar', producerloops: 'Producer Loops', waproduction: 'W. A. Production', unison: 'Unison Audio' };
+function activeChips() {
+  const f = currentFilters();
+  const chips = [];
+  const add = (clear, label) => chips.push({ clear, label });
 
-resultsEl.addEventListener(
-  'play',
-  (e) => {
-    const playing = e.target;
-    resultsEl.querySelectorAll('audio').forEach((a) => {
-      if (a !== playing && !a.paused) a.pause();
-    });
-  },
-  true
-);
+  if (activeInstrument !== 'all') add('instrument', activeInstrument.toUpperCase() === '808' ? '808' : activeInstrument[0].toUpperCase() + activeInstrument.slice(1));
+  if (f.genre) add('genre', `Gênero: ${genreName(f.genre)}`);
+  if (f.key) add('key', `Tom: ${keyFilter.options[keyFilter.selectedIndex]?.textContent || f.key}`);
+  if (f.sig) add('sig', `Compasso: ${f.sig}`);
+  if (f.bpmMin != null || f.bpmMax != null) add('bpm', `BPM: ${f.bpmMin ?? '–'}–${f.bpmMax ?? '–'}`);
+  if (sourceFilter.value !== 'all') add('source', `Fonte: ${sourceFilter.options[sourceFilter.selectedIndex].textContent}`);
+  if (licenseFilter.value !== 'all') add('license', `Licença: ${licenseFilter.options[licenseFilter.selectedIndex].textContent}`);
+  if (durationFilter.value !== 'all') add('duration', `Duração: ${durationFilter.options[durationFilter.selectedIndex].textContent}`);
+  return chips;
+}
+
+function renderActiveChips() {
+  const chips = activeChips();
+  activeFiltersEl.innerHTML = chips
+    .map((c) => `<button class="afchip" type="button" data-clear="${c.clear}">${escapeHtml(c.label)} <span class="x">×</span></button>`)
+    .join('');
+}
+
+activeFiltersEl.addEventListener('click', (e) => {
+  const chip = e.target.closest('.afchip');
+  if (!chip) return;
+  const what = chip.dataset.clear;
+  let serverFilter = false;
+  if (what === 'instrument') {
+    activeInstrument = 'all';
+    instrumentChips.forEach((c) => c.classList.toggle('active', c.dataset.instrument === 'all'));
+  } else if (what === 'genre') {
+    genreFilter.value = '';
+    serverFilter = true;
+  } else if (what === 'key') {
+    keyFilter.value = '';
+    serverFilter = true;
+  } else if (what === 'sig') {
+    sigFilter.value = '';
+    serverFilter = true;
+  } else if (what === 'bpm') {
+    bpmMin.value = '';
+    bpmMax.value = '';
+    serverFilter = true;
+  } else if (what === 'source') {
+    sourceFilter.value = 'all';
+    serverFilter = true;
+  } else if (what === 'license') {
+    licenseFilter.value = 'all';
+  } else if (what === 'duration') {
+    durationFilter.value = 'all';
+  }
+  if (serverFilter && lastTerm) runSearch(); else render();
+});
+
+function sortResults(list) {
+  const mode = sortSelect.value;
+  const arr = list.slice();
+  if (mode === 'dur-asc') arr.sort((a, b) => (a.duration ?? 1e9) - (b.duration ?? 1e9));
+  else if (mode === 'dur-desc') arr.sort((a, b) => (b.duration ?? -1) - (a.duration ?? -1));
+  else if (mode === 'bpm-asc') arr.sort((a, b) => (a.bpm ?? 1e9) - (b.bpm ?? 1e9));
+  return arr;
+}
+
+function updateHint() {
+  const f = currentFilters();
+  filterHint.textContent =
+    f.genre || f.key || f.sig || f.bpmMin != null || f.bpmMax != null
+      ? 'Filtros musicais ativos: itens sem o metadado correspondente ficam de fora (Looperman aplica na busca oficial).'
+      : '';
+}
 
 function render() {
+  renderActiveChips();
+  updateHint();
   if (!lastData) return;
+
   const data = lastData;
 
   if (data.errors && data.errors.length) {
@@ -240,49 +311,93 @@ function render() {
     warningsEl.innerHTML = '';
   }
 
-  const licFilter = licenseFilter.value;
-  const durFilter = durationFilter.value;
   const musicFilter = currentFilters();
   const filtered = data.results.filter(
     (r) =>
-      licenseMatches(r.license, licFilter) &&
-      durationMatches(r.duration, durFilter) &&
+      licenseMatches(r.license, licenseFilter.value) &&
+      durationMatches(r.duration, durationFilter.value) &&
       instrumentMatches(r, activeInstrument) &&
       musicMatches(r, musicFilter)
   );
 
   if (!filtered.length) {
-    const filtersAtivos = licFilter !== 'all' || durFilter !== 'all' || activeInstrument !== 'all' || Object.keys(musicFilter).length > 0;
+    const filtersAtivos =
+      licenseFilter.value !== 'all' ||
+      durationFilter.value !== 'all' ||
+      activeInstrument !== 'all' ||
+      sourceFilter.value !== 'all' ||
+      Object.keys(musicFilter).length > 0;
     emptyEl.innerHTML = `
       <p>Nenhum resultado para "${escapeHtml(data.query)}".</p>
       <p class="muted">${filtersAtivos ? 'Tente relaxar os filtros ou ' : ''}use termos mais simples ou em inglês — ex.: "drums", "synth", "ambient".</p>`;
     emptyEl.classList.remove('hidden');
     resultsEl.innerHTML = '';
-    statusEl.textContent = '';
+    resultsHead.classList.add('hidden');
+    listHead.classList.add('hidden');
     return;
   }
 
   emptyEl.classList.add('hidden');
-  resultsEl.innerHTML = filtered
-    .map((r) => cardHtml({ ...r, sourceLabel: SOURCE_LABELS[r.source] }))
-    .join('');
-  statusEl.textContent = `${filtered.length} resultado(s) em ${(data.tookMs / 1000).toFixed(1)}s`;
+  const sorted = sortResults(filtered);
+  resultsEl.innerHTML = sorted.map(rowHtml).join('');
+  resultsHead.classList.remove('hidden');
+  listHead.classList.remove('hidden');
+  resultCount.textContent = `${sorted.length} resultado(s)` + (data.tookMs ? ` · ${(data.tookMs / 1000).toFixed(1)}s` : '');
 }
+
+resultsEl.addEventListener('click', (e) => {
+  const btnPlay = e.target.closest('.play');
+  if (!btnPlay || btnPlay.disabled) return;
+  const audio = btnPlay.parentElement.querySelector('audio');
+  if (!audio) return;
+  if (audio.paused) {
+    resultsEl.querySelectorAll('audio').forEach((a) => {
+      if (a !== audio && !a.paused) a.pause();
+    });
+    audio.play().catch(() => {});
+  } else {
+    audio.pause();
+  }
+});
+
+resultsEl.addEventListener(
+  'play',
+  (e) => {
+    if (e.target.tagName !== 'AUDIO') return;
+    const wrap = e.target.parentElement;
+    const b = wrap && wrap.querySelector('.play');
+    if (b) b.textContent = '❚❚';
+  },
+  true
+);
+
+resultsEl.addEventListener(
+  'pause',
+  (e) => {
+    if (e.target.tagName !== 'AUDIO') return;
+    const wrap = e.target.parentElement;
+    const b = wrap && wrap.querySelector('.play');
+    if (b) b.textContent = '▶';
+  },
+  true
+);
 
 async function runSearch() {
   const term = input.value.trim();
   if (!term) return;
   lastTerm = term;
-  updateFilterHint();
+  searching = true;
 
   btn.disabled = true;
-  statusEl.textContent = 'Buscando nas fontes...';
   warningsEl.innerHTML = '';
   resultsEl.innerHTML = '';
   emptyEl.classList.add('hidden');
+  resultCount.textContent = 'Buscando nas fontes...';
+  resultsHead.classList.remove('hidden');
+  listHead.classList.add('hidden');
 
   const params = new URLSearchParams({ q: term });
-  if (activeSource !== 'all') params.set('sources', activeSource);
+  if (sourceFilter.value !== 'all') params.set('sources', sourceFilter.value);
   const f = currentFilters();
   if (f.genre) params.set('genre', f.genre);
   if (f.key) params.set('key', f.key);
@@ -297,25 +412,12 @@ async function runSearch() {
     lastData = data;
     render();
   } catch (err) {
-    statusEl.textContent = '';
+    resultCount.textContent = '';
     warningsEl.innerHTML = `<div class="warning">⚠ Falha na busca: ${escapeHtml(err.message)}</div>`;
   } finally {
     btn.disabled = false;
+    searching = false;
   }
-}
-
-function updateFilterHint() {
-  const f = currentFilters();
-  const parts = [];
-  if (f.genre) parts.push(`gênero ${genreName(f.genre)}`);
-  if (f.key) parts.push(`tom ${f.key}`);
-  if (f.sig) parts.push(`compasso ${f.sig}`);
-  if (f.bpmMin != null || f.bpmMax != null) {
-    parts.push(`BPM ${f.bpmMin ?? '–'} a ${f.bpmMax ?? '–'}`);
-  }
-  filterHint.textContent = parts.length
-    ? `Filtros ativos: ${parts.join(' · ')} — Looperman aplica na busca oficial; itens sem esse metadado ficam de fora.`
-    : 'Gênero, tom, BPM e compasso refinam onde as fontes têm metadados (Looperman aplica na busca oficial do site).';
 }
 
 async function loadFilters() {
@@ -334,9 +436,8 @@ async function loadFilters() {
     fill(genreFilter, data.genres || []);
     fill(keyFilter, data.keys || []);
     fill(sigFilter, data.sigs || []);
-    updateFilterHint();
   } catch {
-    filterHint.textContent = 'Filtros de gênero/tom/compasso indisponíveis no momento (Looperman não respondeu).';
+    // selects ficam apenas com "Todos"
   }
 }
 

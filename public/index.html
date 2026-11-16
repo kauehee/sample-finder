@@ -7,89 +7,126 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header class="hero">
-    <nav class="topnav">
-      <a href="/catalogo">Catálogo de fontes (58 plataformas)</a>
-    </nav>
-    <h1><span class="grad">Sample</span> Finder</h1>
-    <p class="subtitle">Samples, loops e áudios gratuitos encontrados na web — preview e download direto</p>
-
+  <header class="topbar">
+    <a class="brand" href="./"><span class="grad">Sample</span> Finder</a>
     <form id="searchForm" class="search-bar" autocomplete="off">
       <input
         id="searchInput"
         type="text"
-        placeholder='Ex.: "drum loop 120bpm", "rain ambience", "vocal chop"...'
+        placeholder='Ex.: "drum loop 120bpm", "808 bass", "rain ambience"...'
         autofocus
       />
       <button type="submit" id="searchBtn">Buscar</button>
     </form>
-
-    <div class="filters">
-      <div class="filter-group" id="sourceChips">
-        <button class="chip active" data-source="all">Todas as fontes</button>
-        <button class="chip" data-source="archive">Internet Archive</button>
-        <button class="chip" data-source="looperman">Looperman</button>
-        <button class="chip" data-source="freesound">FreeSound</button>
-        <button class="chip" data-source="loopmasters">Loopmasters</button>
-        <button class="chip" data-source="sampleradar">SampleRadar</button>
-        <button class="chip" data-source="producerloops">Producer Loops</button>
-        <button class="chip" data-source="waproduction">W. A. Production</button>
-        <button class="chip" data-source="unison">Unison Audio</button>
-      </div>
-      <select id="licenseFilter" class="chip select">
-        <option value="all">Qualquer licença</option>
-        <option value="cc0">CC0 / Domínio Público</option>
-        <option value="cc-by">CC BY (atribuição)</option>
-      </select>
-      <select id="durationFilter" class="chip select">
-        <option value="all">Qualquer duração</option>
-        <option value="short">Curto (até 15s)</option>
-        <option value="medium">Médio (15s – 1min)</option>
-        <option value="long">Longo (mais de 1min)</option>
-      </select>
-    </div>
-
-    <div class="filters" id="instrumentChips">
-      <span class="filters-label">Browse instruments</span>
-      <button class="chip active" data-instrument="all">Todos</button>
-      <button class="chip" data-instrument="drums">Drums</button>
-      <button class="chip" data-instrument="vocals">Vocals</button>
-      <button class="chip" data-instrument="synth">Synth</button>
-      <button class="chip" data-instrument="keys">Keys</button>
-      <button class="chip" data-instrument="guitar">Guitar</button>
-      <button class="chip" data-instrument="percussion">Percussion</button>
-      <button class="chip" data-instrument="piano">Piano</button>
-      <button class="chip" data-instrument="strings">Strings</button>
-      <button class="chip" data-instrument="kicks">Kicks</button>
-      <button class="chip" data-instrument="hats">Hats</button>
-      <button class="chip" data-instrument="snares">Snares</button>
-      <button class="chip" data-instrument="808">808</button>
-    </div>
-
-    <div class="filters filters-music">
-      <select id="genreFilter" class="chip select" title="Gênero">
-        <option value="">Gênero (todos)</option>
-      </select>
-      <select id="keyFilter" class="chip select" title="Tom">
-        <option value="">Tom (todos)</option>
-      </select>
-      <select id="sigFilter" class="chip select" title="Compasso">
-        <option value="">Compasso (todos)</option>
-      </select>
-      <div class="bpm-range">
-        <input id="bpmMin" type="number" min="40" max="300" placeholder="BPM mín" />
-        <span class="bpm-sep">–</span>
-        <input id="bpmMax" type="number" min="40" max="300" placeholder="BPM máx" />
-      </div>
-      <button id="clearFilters" class="chip" type="button">Limpar filtros</button>
-    </div>
-    <p class="filter-hint" id="filterHint"></p>
+    <nav class="topnav">
+      <a href="/catalogo">Catálogo de fontes (58)</a>
+    </nav>
   </header>
 
-  <main>
-    <div id="status" class="status"></div>
+  <main class="container">
+    <section class="filters" aria-label="Filtros">
+      <div class="filter-row">
+        <label class="fselect">
+          <span>Gêneros</span>
+          <select id="genreFilter"><option value="">Todos</option></select>
+        </label>
+        <label class="fselect">
+          <span>Tom</span>
+          <select id="keyFilter"><option value="">Todos</option></select>
+        </label>
+        <label class="fselect">
+          <span>Compasso</span>
+          <select id="sigFilter"><option value="">Todos</option></select>
+        </label>
+        <label class="fselect">
+          <span>BPM</span>
+          <span class="bpm-range">
+            <input id="bpmMin" type="number" min="40" max="300" placeholder="mín" />
+            <span class="bpm-sep">–</span>
+            <input id="bpmMax" type="number" min="40" max="300" placeholder="máx" />
+          </span>
+        </label>
+        <label class="fselect">
+          <span>Fontes</span>
+          <select id="sourceFilter">
+            <option value="all">Todas as fontes</option>
+            <option value="archive">Internet Archive</option>
+            <option value="looperman">Looperman</option>
+            <option value="freesound">FreeSound</option>
+            <option value="loopmasters">Loopmasters</option>
+            <option value="sampleradar">SampleRadar</option>
+            <option value="producerloops">Producer Loops</option>
+            <option value="waproduction">W. A. Production</option>
+            <option value="unison">Unison Audio</option>
+          </select>
+        </label>
+        <label class="fselect">
+          <span>Licença</span>
+          <select id="licenseFilter">
+            <option value="all">Qualquer</option>
+            <option value="cc0">CC0 / Domínio Público</option>
+            <option value="cc-by">CC BY (atribuição)</option>
+          </select>
+        </label>
+        <label class="fselect">
+          <span>Duração</span>
+          <select id="durationFilter">
+            <option value="all">Qualquer</option>
+            <option value="short">Curto (até 15s)</option>
+            <option value="medium">Médio (15s – 1min)</option>
+            <option value="long">Longo (mais de 1min)</option>
+          </select>
+        </label>
+        <button id="clearFilters" class="chip clear" type="button">Limpar tudo</button>
+      </div>
+
+      <div class="instruments" id="instrumentChips">
+        <span class="filters-label">Browse instruments</span>
+        <div class="chip-row">
+          <button class="chip active" data-instrument="all">Todos</button>
+          <button class="chip" data-instrument="drums">Drums</button>
+          <button class="chip" data-instrument="vocals">Vocals</button>
+          <button class="chip" data-instrument="synth">Synth</button>
+          <button class="chip" data-instrument="keys">Keys</button>
+          <button class="chip" data-instrument="guitar">Guitar</button>
+          <button class="chip" data-instrument="percussion">Percussion</button>
+          <button class="chip" data-instrument="piano">Piano</button>
+          <button class="chip" data-instrument="strings">Strings</button>
+          <button class="chip" data-instrument="kicks">Kicks</button>
+          <button class="chip" data-instrument="hats">Hats</button>
+          <button class="chip" data-instrument="snares">Snares</button>
+          <button class="chip" data-instrument="808">808</button>
+        </div>
+      </div>
+
+      <div class="active-filters" id="activeFilters"></div>
+      <p class="filter-hint" id="filterHint"></p>
+    </section>
+
+    <section class="results-head hidden" id="resultsHead">
+      <span id="resultCount" class="result-count"></span>
+      <label class="fselect sort">
+        <span>Ordenar</span>
+        <select id="sortSelect">
+          <option value="relevance">Relevância</option>
+          <option value="dur-asc">Duração (curta → longa)</option>
+          <option value="dur-desc">Duração (longa → curta)</option>
+          <option value="bpm-asc">BPM (crescente)</option>
+        </select>
+      </label>
+    </section>
+
     <div id="warnings" class="warnings"></div>
-    <div id="results" class="results"></div>
+
+    <div class="list-head hidden" id="listHead">
+      <span>Título</span>
+      <span>Tempo</span>
+      <span>Tom</span>
+      <span>BPM</span>
+      <span></span>
+    </div>
+    <div id="results" class="list"></div>
+
     <div id="empty" class="empty hidden">
       <p>Nenhum resultado ainda.</p>
       <p class="muted">Digite o que você procura — ex.: "808 bass", "piano loop", "city traffic".</p>
@@ -98,9 +135,8 @@
 
   <footer class="footer">
     <p>
-      Resultados de fontes públicas: Internet Archive (Creative Commons / Domínio Público),
-      Looperman (compartilhamento gratuito) e FreeSound (Creative Commons).
-      Verifique a licença de cada som antes de usar em lançamentos comerciais.
+      Resultados de fontes públicas e de demos gratuitos oficiais — todo áudio encontrado
+      baixa direto pela plataforma. Verifique a licença de cada som antes de usar em lançamentos comerciais.
     </p>
   </footer>
 
