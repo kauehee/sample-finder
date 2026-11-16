@@ -11,14 +11,17 @@ Agregador de busca de **samples, loops e áudios gratuitos**: você digita o que
 | **FreeSound** | One-shots e efeitos sonoros (CC) | Preview baixável direto no app (via proxy) | Opcional: `FSOUND_API_KEY` |
 | **Loopmasters** | Packs **gratuitos** da loja (seção Free Samples) | Demo baixável direto no app; pack completo grátis via carrinho no site | Nenhuma |
 | **SampleRadar** | Packs completos em WAV do MusicRadar (~285 packs, sem cadastro) | Zip baixado direto no app (via proxy) | Nenhuma |
+| **Producer Loops** | Demos oficiais dos samplers gratuitos de centenas de gravadoras parceiras | Demo baixável direto no app | Nenhuma |
+| **W. A. Production** | Previews dos packs gratuitos da loja (EDM, Future Bass, House...) | Preview baixável direto no app | Nenhuma |
+| **Unison Audio** | Packs gratuitos (vocais, drums, MIDI, lo-fi) | Demo baixável direto no app | Nenhuma |
 
 ## Catálogo de fontes (`/catalogo`)
 
-Página separada com as **58 plataformas** de samples gratuitos (selos, portais e acervos): busca por nome/gênero e link direto para cada fonte. Quatro delas estão **integradas na busca** (Internet Archive, FreeSound, Looperman, Loopmasters, SampleRadar); as demais são catálogo de consulta — os freebies delas ficam no site oficial (cadastro/carrinho da própria empresa).
+Página separada com as **58 plataformas** de samples gratuitos (selos, portais e acervos): busca por nome/gênero e link direto para cada fonte. Oito delas estão **integradas na busca** (Internet Archive, FreeSound, Looperman, Loopmasters, SampleRadar, Producer Loops, W. A. Production, Unison Audio); as demais são catálogo de consulta — os freebies delas ficam no site oficial (cadastro/carrinho da própria empresa).
 
 ## Download universal
 
-Regra do app: **todo áudio que o Sample Finder encontra e toca, baixa pela própria plataforma** — nenhum download exige acessar o site de origem. Isso vale para as cinco fontes integradas (previews do FreeSound, demos do Loopmasters e zips do SampleRadar incluídos, via `/proxy`). Plataformas que só liberam arquivos por carrinho/conta no site oficial (Cymatics, W.A. Production, Black Octopus etc.) ficam no catálogo com link direto — automatizar carrinhos de terceiros violaria os termos desses sites, e re-hospedar os arquivos violaria as licenças.
+Regra do app: **todo áudio que o Sample Finder encontra e toca, baixa pela própria plataforma** — nenhum download exige acessar o site de origem. Isso vale para as oito fontes integradas (previews do FreeSound, demos do Loopmasters/Producer Loops/Unison, previews do W. A. Production e zips do SampleRadar incluídos, via `/proxy`). Plataformas que só liberam arquivos por carrinho/conta no site oficial (Cymatics, Black Octopus, Ghosthack etc.) ficam no catálogo com link direto — automatizar carrinhos de terceiros violaria os termos desses sites, e re-hospedar os arquivos violaria as licenças.
 
 ## Rodar localmente
 
@@ -80,6 +83,9 @@ src/sources/looperman.js      # Busca do Looperman via fluxo oficial do site (PO
 src/sources/freesound.js      # API v2 do FreeSound (chave opcional)
 src/sources/loopmasters.js    # Packs gratuitos do Loopmasters (seção Free Samples)
 src/sources/sampleradar.js    # Packs WAV do MusicRadar/SampleRadar (zips diretos)
+src/sources/producerloops.js  # Demos dos samplers gratuitos do Producer Loops (mp3 diretos)
+src/sources/waproduction.js   # Previews dos packs gratuitos do W. A. Production (mp3 diretos)
+src/sources/unison.js         # Demos dos free packs da Unison Audio (mp3 diretos)
 public/                       # Interface (HTML/CSS/JS puros, sem build) + catalogo.html
 ```
 
@@ -92,5 +98,6 @@ public/                       # Interface (HTML/CSS/JS puros, sem build) + catal
 - **Looperman**: os resultados vêm da busca oficial do site (mesmo fluxo que o navegador usa, incluindo token de sessão).
 - **Loopmasters**: é uma loja paga — o app inclui apenas o catálogo **gratuito** (seção Free Samples, ~12 packs). O demo oficial toca e baixa no app; o pack completo grátis é liberado no site deles (carrinho + e-mail), então o card leva para a página do produto. Packs pagos nunca aparecem.
 - **SampleRadar**: o hub do MusicRadar lista ~285 packs gratuitos; o app encontra o pack e baixa o zip direto do CDN deles, sem cadastro.
-- **Catálogo de 58 plataformas**: as fontes com freebies fechados em cadastro/carrinho (Cymatics, W.A. Production, Black Octopus etc.) aparecem no catálogo com link para o site oficial — o app não automatiza carrinhos de terceiros nem re-hospeda arquivos (violaria ToS/licenças).
+- **Producer Loops / W. A. Production / Unison Audio**: o app indexa as páginas de freebies dessas lojas e baixa os **demos/previews oficiais** direto no app. Os packs completos gratuitos dessas lojas são liberados por carrinho/cadastro no site delas — o card leva para a página do produto, e nunca há cobrança envolvida.
+- **Catálogo de 58 plataformas**: as fontes com freebies fechados em cadastro/carrinho (Cymatics, Black Octopus, Ghosthack, Prime Loops, Touch Loops etc.) aparecem no catálogo com link para o site oficial — o app não automatiza carrinhos de terceiros nem re-hospeda arquivos (violaria ToS/licenças). As lojas Shopify (Audiotent, Riemann, Touch Loops, Prime Loops) bloqueiam IPs de datacenter com HTTP 429, o que impede indexação estável pelo servidor.
 - **Disponibilidade**: se um site mudar o layout ou aplicar bloqueio anti-bot, o app degrada com elegância — exibe um aviso e entrega os resultados das outras fontes.

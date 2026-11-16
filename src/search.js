@@ -3,6 +3,9 @@ const { searchLooperman } = require('./sources/looperman');
 const { searchFreesound } = require('./sources/freesound');
 const { searchLoopmasters } = require('./sources/loopmasters');
 const { searchSampleRadar } = require('./sources/sampleradar');
+const { searchProducerLoops } = require('./sources/producerloops');
+const { searchWAProduction } = require('./sources/waproduction');
+const { searchUnison } = require('./sources/unison');
 
 const SOURCES = {
   archive: { label: 'Internet Archive', run: searchArchive },
@@ -10,6 +13,9 @@ const SOURCES = {
   freesound: { label: 'FreeSound', run: searchFreesound },
   loopmasters: { label: 'Loopmasters', run: searchLoopmasters },
   sampleradar: { label: 'SampleRadar', run: searchSampleRadar },
+  producerloops: { label: 'Producer Loops', run: searchProducerLoops },
+  waproduction: { label: 'W. A. Production', run: searchWAProduction },
+  unison: { label: 'Unison Audio', run: searchUnison },
 };
 
 function relevanceScore(item, term) {

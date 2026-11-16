@@ -180,7 +180,7 @@ function cardHtml(item) {
     </div>`;
 }
 
-const SOURCE_LABELS = { archive: 'Internet Archive', looperman: 'Looperman', freesound: 'FreeSound', loopmasters: 'Loopmasters', sampleradar: 'SampleRadar' };
+const SOURCE_LABELS = { archive: 'Internet Archive', looperman: 'Looperman', freesound: 'FreeSound', loopmasters: 'Loopmasters', sampleradar: 'SampleRadar', producerloops: 'Producer Loops', waproduction: 'W. A. Production', unison: 'Unison Audio' };
 
 resultsEl.addEventListener(
   'play',

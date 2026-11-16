@@ -56,15 +56,21 @@ async function getFilters() {
 }
 
 const AUDIO_HOSTS = new Map([
-  ['www.looperman.com', 'https://www.looperman.com/'],
-  ['looperman.com', 'https://www.looperman.com/'],
-  ['cdn.freesound.org', 'https://freesound.org/'],
-  ['demos.loopmasters.com', 'https://www.loopmasters.com/'],
-  ['cdn.mos.musicradar.com', 'https://www.musicradar.com/'],
+  ['www.looperman.com', { referer: 'https://www.looperman.com/' }],
+  ['looperman.com', { referer: 'https://www.looperman.com/' }],
+  ['cdn.freesound.org', { referer: 'https://freesound.org/' }],
+  ['demos.loopmasters.com', { referer: 'https://www.loopmasters.com/' }],
+  ['cdn.mos.musicradar.com', { referer: 'https://www.musicradar.com/' }],
+  ['cdn.producerloops.com', { referer: 'https://www.producerloops.com/' }],
+  ['nyc3.digitaloceanspaces.com', { referer: 'https://www.waproduction.com/', prefix: '/waeshop-space/' }],
+  ['unisonsoundbanks.s3.us-west-1.amazonaws.com', { referer: 'https://unison.audio/' }],
 ]);
 
-function isAllowedHost(hostname) {
-  return AUDIO_HOSTS.has(hostname) || hostname === 'archive.org' || hostname.endsWith('.archive.org');
+function isAllowedHost(hostname, pathname = '') {
+  if (hostname === 'archive.org' || hostname.endsWith('.archive.org')) return true;
+  const cfg = AUDIO_HOSTS.get(hostname);
+  if (!cfg) return false;
+  return !cfg.prefix || pathname.startsWith(cfg.prefix);
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -112,15 +118,15 @@ app.get('/proxy', async (req, res) => {
   } catch {
     return res.status(400).end('URL inválida');
   }
-  if (!isAllowedHost(parsed.hostname) || !/\.(mp3|wav|ogg|flac|m4a|aac|zip)(\?|$)/i.test(parsed.pathname)) {
+  if (!isAllowedHost(parsed.hostname, parsed.pathname) || !/\.(mp3|wav|ogg|flac|m4a|aac|zip)(\?|$)/i.test(parsed.pathname)) {
     return res.status(400).end('Host ou tipo de arquivo não permitido');
   }
 
   const headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
   };
-  const referer = AUDIO_HOSTS.get(parsed.hostname);
-  if (referer) headers.Referer = referer;
+  const hostCfg = AUDIO_HOSTS.get(parsed.hostname);
+  if (hostCfg && hostCfg.referer) headers.Referer = hostCfg.referer;
   if (req.headers.range) headers.Range = req.headers.range;
 
   try {
