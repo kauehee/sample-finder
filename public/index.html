@@ -71,10 +71,12 @@
         <label class="fselect">
           <span>Duração</span>
           <select id="durationFilter">
-            <option value="all">Qualquer</option>
-            <option value="short">Curto (até 15s)</option>
-            <option value="medium">Médio (15s – 1min)</option>
-            <option value="long">Longo (mais de 1min)</option>
+            <option value="loops" selected>Loops (até 1min)</option>
+            <option value="short">Curtos (até 15s)</option>
+            <option value="medium">Médios (15s – 30s)</option>
+            <option value="long">Longos (30s – 1min)</option>
+            <option value="xlong">1min – 2min</option>
+            <option value="all">Tudo (até 2min)</option>
           </select>
         </label>
         <button id="clearFilters" class="chip clear" type="button">Limpar tudo</button>
@@ -101,6 +103,7 @@
 
       <div class="active-filters" id="activeFilters"></div>
       <p class="filter-hint" id="filterHint"></p>
+      <p class="loop-note">Somente loops e samples curtos: até 1min por padrão. Áudios com mais de 2min são removidos automaticamente.</p>
     </section>
 
     <section class="results-head hidden" id="resultsHead">
@@ -136,7 +139,8 @@
   <footer class="footer">
     <p>
       Resultados de fontes públicas e de demos gratuitos oficiais — todo áudio encontrado
-      baixa direto pela plataforma. Verifique a licença de cada som antes de usar em lançamentos comerciais.
+      baixa direto pela plataforma. Somente loops/samples (até 1min por padrão) são exibidos;
+      áudios acima de 2min são descartados. Verifique a licença de cada som antes de usar em lançamentos comerciais.
     </p>
   </footer>
 

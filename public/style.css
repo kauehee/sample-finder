@@ -454,6 +454,13 @@ main.container {
 .filter-hint { margin-top: 10px; font-size: 0.75rem; color: var(--muted); min-height: 0; }
 .filter-hint:empty { display: none; }
 
+.loop-note {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
 .results-head {
   display: flex;
   align-items: center;

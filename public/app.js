@@ -52,7 +52,7 @@ clearFiltersBtn.addEventListener('click', () => {
   sigFilter.value = '';
   sourceFilter.value = 'all';
   licenseFilter.value = 'all';
-  durationFilter.value = 'all';
+  durationFilter.value = 'loops';
   sortSelect.value = 'relevance';
   bpmMin.value = '';
   bpmMax.value = '';
@@ -96,10 +96,13 @@ function licenseMatches(license, filter) {
 
 function durationMatches(duration, filter) {
   if (filter === 'all') return true;
-  if (duration == null) return filter !== 'long';
-  if (filter === 'short') return duration <= 15;
-  if (filter === 'medium') return duration > 15 && duration <= 60;
-  if (filter === 'long') return duration > 60;
+  if (filter === 'loops') return duration == null || Number(duration) <= 60;
+  if (duration == null) return false;
+  const d = Number(duration);
+  if (filter === 'short') return d <= 15;
+  if (filter === 'medium') return d > 15 && d <= 30;
+  if (filter === 'long') return d > 30 && d <= 60;
+  if (filter === 'xlong') return d > 60 && d <= 120;
   return true;
 }
 
@@ -181,6 +184,7 @@ function rowHtml(item) {
 
   const tags = [
     `<span class="tag src src-${escapeHtml(item.source)}">${escapeHtml(sourceLabel)}</span>`,
+    !item.previewUrl && item.downloadUrl ? '<span class="tag">Pacote ZIP</span>' : '',
     item.genre ? `<span class="tag">${escapeHtml(item.genre)}</span>` : '',
     item.author ? `<span class="tag">${escapeHtml(item.author)}</span>` : '',
     item.sig ? `<span class="tag">${escapeHtml(item.sig)}</span>` : '',
@@ -236,7 +240,7 @@ function activeChips() {
   if (f.bpmMin != null || f.bpmMax != null) add('bpm', `BPM: ${f.bpmMin ?? '–'}–${f.bpmMax ?? '–'}`);
   if (sourceFilter.value !== 'all') add('source', `Fonte: ${sourceFilter.options[sourceFilter.selectedIndex].textContent}`);
   if (licenseFilter.value !== 'all') add('license', `Licença: ${licenseFilter.options[licenseFilter.selectedIndex].textContent}`);
-  if (durationFilter.value !== 'all') add('duration', `Duração: ${durationFilter.options[durationFilter.selectedIndex].textContent}`);
+  if (durationFilter.value !== 'loops') add('duration', `Duração: ${durationFilter.options[durationFilter.selectedIndex].textContent}`);
   return chips;
 }
 
@@ -274,7 +278,7 @@ activeFiltersEl.addEventListener('click', (e) => {
   } else if (what === 'license') {
     licenseFilter.value = 'all';
   } else if (what === 'duration') {
-    durationFilter.value = 'all';
+    durationFilter.value = 'loops';
   }
   if (serverFilter && lastTerm) runSearch(); else render();
 });
@@ -312,28 +316,46 @@ function render() {
   }
 
   const musicFilter = currentFilters();
-  const filtered = data.results.filter(
+  const baseFiltered = data.results.filter(
     (r) =>
       licenseMatches(r.license, licenseFilter.value) &&
-      durationMatches(r.duration, durationFilter.value) &&
       instrumentMatches(r, activeInstrument) &&
       musicMatches(r, musicFilter)
   );
+  const filtered = baseFiltered.filter((r) => durationMatches(r.duration, durationFilter.value));
+  const hiddenByDuration = baseFiltered.length - filtered.length;
 
   if (!filtered.length) {
     const filtersAtivos =
       licenseFilter.value !== 'all' ||
-      durationFilter.value !== 'all' ||
+      durationFilter.value !== 'loops' ||
       activeInstrument !== 'all' ||
       sourceFilter.value !== 'all' ||
       Object.keys(musicFilter).length > 0;
+    const notes = [];
+    if (hiddenByDuration > 0) {
+      notes.push(
+        `${hiddenByDuration} resultado(s) acima de 1min ficaram ocultos — mude a Duração para "Tudo (até 2min)".`
+      );
+    }
+    if (data.droppedLong > 0) {
+      notes.push(`${data.droppedLong} áudio(s) com mais de 2min foram removidos automaticamente.`);
+    }
+    const hint = notes.length
+      ? notes.map(escapeHtml).join(' ')
+      : `${filtersAtivos ? 'Tente relaxar os filtros ou ' : ''}use termos mais simples ou em inglês — ex.: "drums", "synth", "ambient".`;
     emptyEl.innerHTML = `
       <p>Nenhum resultado para "${escapeHtml(data.query)}".</p>
-      <p class="muted">${filtersAtivos ? 'Tente relaxar os filtros ou ' : ''}use termos mais simples ou em inglês — ex.: "drums", "synth", "ambient".</p>`;
+      <p class="muted">${hint}</p>`;
     emptyEl.classList.remove('hidden');
     resultsEl.innerHTML = '';
     resultsHead.classList.add('hidden');
     listHead.classList.add('hidden');
+    const emptyCounts = ['0 resultado(s)'];
+    if (hiddenByDuration > 0) emptyCounts.push(`${hiddenByDuration} acima de 1min oculto(s)`);
+    if (data.droppedLong > 0) emptyCounts.push(`${data.droppedLong} >2min removido(s)`);
+    if (data.tookMs) emptyCounts.push(`${(data.tookMs / 1000).toFixed(1)}s`);
+    resultCount.textContent = emptyCounts.join(' · ');
     return;
   }
 
@@ -342,7 +364,11 @@ function render() {
   resultsEl.innerHTML = sorted.map(rowHtml).join('');
   resultsHead.classList.remove('hidden');
   listHead.classList.remove('hidden');
-  resultCount.textContent = `${sorted.length} resultado(s)` + (data.tookMs ? ` · ${(data.tookMs / 1000).toFixed(1)}s` : '');
+  const counts = [`${sorted.length} resultado(s)`];
+  if (hiddenByDuration > 0) counts.push(`${hiddenByDuration} acima de 1min oculto(s)`);
+  if (data.droppedLong > 0) counts.push(`${data.droppedLong} >2min removido(s)`);
+  if (data.tookMs) counts.push(`${(data.tookMs / 1000).toFixed(1)}s`);
+  resultCount.textContent = counts.join(' · ');
 }
 
 resultsEl.addEventListener('click', (e) => {

@@ -3,6 +3,7 @@ const fs = require('fs');
 const express = require('express');
 const { searchAll } = require('./src/search');
 const { getLoopermanFilters } = require('./src/sources/looperman');
+const { AUDIO_HOSTS, isAllowedHost } = require('./src/audioHosts');
 
 try {
   const envPath = path.join(__dirname, '.env');
@@ -53,24 +54,6 @@ async function getFilters() {
     // fallback abaixo
   }
   return { ...FILTER_FALLBACK, stale: true };
-}
-
-const AUDIO_HOSTS = new Map([
-  ['www.looperman.com', { referer: 'https://www.looperman.com/' }],
-  ['looperman.com', { referer: 'https://www.looperman.com/' }],
-  ['cdn.freesound.org', { referer: 'https://freesound.org/' }],
-  ['demos.loopmasters.com', { referer: 'https://www.loopmasters.com/' }],
-  ['cdn.mos.musicradar.com', { referer: 'https://www.musicradar.com/' }],
-  ['cdn.producerloops.com', { referer: 'https://www.producerloops.com/' }],
-  ['nyc3.digitaloceanspaces.com', { referer: 'https://www.waproduction.com/', prefix: '/waeshop-space/' }],
-  ['unisonsoundbanks.s3.us-west-1.amazonaws.com', { referer: 'https://unison.audio/' }],
-]);
-
-function isAllowedHost(hostname, pathname = '') {
-  if (hostname === 'archive.org' || hostname.endsWith('.archive.org')) return true;
-  const cfg = AUDIO_HOSTS.get(hostname);
-  if (!cfg) return false;
-  return !cfg.prefix || pathname.startsWith(cfg.prefix);
 }
 
 app.use(express.static(path.join(__dirname, 'public')));

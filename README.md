@@ -1,6 +1,6 @@
 # Sample Finder
 
-Agregador de busca de **samples, loops e áudios gratuitos**: você digita o que procura e o app vasculha bibliotecas públicas em tempo real, com **preview de áudio e download direto** — a licença de cada som aparece no card.
+Agregador de busca de **samples e loops gratuitos**: você digita o que procura e o app vasculha bibliotecas públicas em tempo real, com **preview de áudio e download direto** — a licença de cada som aparece no card. O app entrega **somente loops/samples curtos**: áudios acima de 2 min são descartados, e a interface mostra até 1 min por padrão.
 
 ## Fontes de busca
 
@@ -31,6 +31,15 @@ npm start          # porta 3000 (ou defina PORT=3100 para outra porta)
 ```
 
 Abra `http://localhost:3000` e busque, ex.: `drum loop`, `rain ambience`, `808 bass`.
+
+## Somente loops (duração real)
+
+O app foi feito para achar **trechos curtos**, como os samples de uma DAW — não músicas, álbuns ou podcasts. Regras aplicadas no servidor:
+
+- A duração de cada resultado é obtida do metadado da fonte ou extraída do próprio arquivo (MP3 via `Range` + frame/Xing; WAV via cabeçalho RIFF). Itens sem metadado no Looperman são tratados como loops por definição; demos/packs sem duração confirmada ficam de fora.
+- **Nada acima de 2 min (120 s) entra na resposta da API** — em nenhum filtro.
+- Na interface, o padrão é **Loops (até 1min)**. O seletor de Duração permite refinar (até 15 s, 15–30 s, 30–60 s) ou abrir **Tudo (até 2min)**.
+- Fontes que só oferecem **demo completo do pack** (Loopmasters, Producer Loops, W. A. Production, Unison) podem aparecer de forma esporádica quando o demo tem menos de 2 min; demos mais longos são filtrados. SampleRadar entra como pacote ZIP de loops.
 
 ## Filtros musicais (estilo Splice)
 
@@ -77,7 +86,9 @@ Limites honestos:
 
 ```
 server.js                     # Express: /api/search + /proxy (streaming de áudio) + /catalogo
-src/search.js                 # Orquestra as fontes, classifica e deduplica
+src/search.js                 # Orquestra as fontes, mede durações e descarta áudios longos
+src/audioDuration.js          # Sonda de duração real (MP3/WAV) via requisição Range
+src/audioHosts.js             # Whitelist de CDNs + Referer exigido por cada host
 src/sources/internetArchive.js # API pública do Internet Archive (sem chave)
 src/sources/looperman.js      # Busca do Looperman via fluxo oficial do site (POST + CSRF)
 src/sources/freesound.js      # API v2 do FreeSound (chave opcional)
@@ -92,7 +103,8 @@ public/                       # Interface (HTML/CSS/JS puros, sem build) + catal
 ## Notas honestas sobre limites
 
 - **Licenças**: cada resultado exibe a licença (CC0, CC BY, etc.). Verifique antes de usar em lançamentos comerciais — CC BY exige atribuição; CC BY-NC proíbe uso comercial.
-- **Áudio via proxy local**: o preview e o download de todas as fontes passam por `/proxy` (whitelist: Looperman, FreeSound, Loopmasters, SampleRadar e Internet Archive — não é proxy aberto). Isso resolve duas limitações das fontes: proteção anti-hotlink do Looperman (exige `Referer` do próprio site) e os redirects/CDN do Internet Archive que quebram o player por CORS. O proxy repassa `Range` (seek no player) e o nome do arquivo no download.
+- **Áudio via proxy local**: o preview e o download de todas as fontes passam por `/proxy` (whitelist: Looperman, FreeSound, Loopmasters, SampleRadar, Producer Loops, W. A. Production, Unison e Internet Archive — não é proxy aberto). Isso resolve duas limitações das fontes: proteção anti-hotlink do Looperman (exige `Referer` do próprio site) e os redirects/CDN do Internet Archive que quebram o player por CORS. O proxy repassa `Range` (seek no player) e o nome do arquivo no download.
+- **Duração**: a sonda lê apenas os primeiros 64 KB de cada áudio sem duração (com 2º Range quando há ID3 grande) e guarda o resultado em cache por 6 h. Se a fonte não informar e a sonda não conseguir medir, o item só permanece se for do Looperman (biblioteca 100% de loops) ou um pacote ZIP; caso contrário, é descartado para não arriscar entregar um áudio longo.
 - **Play exclusivo**: dar play em um resultado pausa automaticamente os outros.
 - **FreeSound**: o preview toca e baixa direto no app; o arquivo completo exige login gratuito no próprio site.
 - **Looperman**: os resultados vêm da busca oficial do site (mesmo fluxo que o navegador usa, incluindo token de sessão).

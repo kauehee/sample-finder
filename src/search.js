@@ -6,6 +6,12 @@ const { searchSampleRadar } = require('./sources/sampleradar');
 const { searchProducerLoops } = require('./sources/producerloops');
 const { searchWAProduction } = require('./sources/waproduction');
 const { searchUnison } = require('./sources/unison');
+const { probeAudioDuration } = require('./audioDuration');
+
+// Nada acima de 2 minutos entra nos resultados. A interface usa 1 min por padrão.
+const MAX_AUDIO_SECONDS = 120;
+const DEFAULT_LOOP_SECONDS = 60;
+const PROBE_CONCURRENCY = 8;
 
 const SOURCES = {
   archive: { label: 'Internet Archive', run: searchArchive },
@@ -39,6 +45,55 @@ function dedupe(items) {
   });
 }
 
+async function pool(items, limit, worker) {
+  let index = 0;
+  async function run() {
+    while (index < items.length) {
+      const current = items[index++];
+      try {
+        await worker(current);
+      } catch {
+        // item fica sem duração e será descartado (exceto Looperman/packs)
+      }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, run));
+}
+
+const PREVIEW_AUDIO_RE = /\.(mp3|wav|ogg|flac|m4a|aac)(\?|$)/i;
+
+function originFromPreview(previewUrl) {
+  if (!previewUrl || !previewUrl.startsWith('/proxy?url=')) return null;
+  try {
+    const url = decodeURIComponent(previewUrl.slice('/proxy?url='.length));
+    return /^https?:\/\//i.test(url) ? url : null;
+  } catch {
+    return null;
+  }
+}
+
+// Preenche a duração real dos itens que vêm sem metadado (Looperman, demos, Archive).
+async function resolveDurations(items) {
+  await pool(items, PROBE_CONCURRENCY, async (item) => {
+    if (item.duration != null && isFinite(Number(item.duration))) return;
+    if (!item.previewUrl) return;
+    const origin = originFromPreview(item.previewUrl);
+    if (!origin || !PREVIEW_AUDIO_RE.test(origin)) return;
+    const duration = await probeAudioDuration(origin);
+    if (duration != null) item.duration = duration;
+  });
+}
+
+function isLoopResult(item) {
+  const isPack = !item.previewUrl && !!item.downloadUrl;
+  if (isPack) return true; // pacote zip de loops, não é áudio longo
+  if (item.duration == null || !isFinite(Number(item.duration))) {
+    return item.source === 'looperman'; // biblioteca 100% de loops
+  }
+  const duration = Number(item.duration);
+  return duration > 0 && duration <= MAX_AUDIO_SECONDS;
+}
+
 async function searchAll(term, { sources, filters = {} } = {}) {
   const wanted = sources && sources.length ? sources.filter((s) => SOURCES[s]) : Object.keys(SOURCES);
   const started = Date.now();
@@ -58,13 +113,22 @@ async function searchAll(term, { sources, filters = {} } = {}) {
   });
 
   const unique = dedupe(results);
-  unique.sort((a, b) => relevanceScore(b, term) - relevanceScore(a, term));
+  await resolveDurations(unique);
+
+  const droppedLong = unique.filter(
+    (it) => it.duration != null && isFinite(Number(it.duration)) && Number(it.duration) > MAX_AUDIO_SECONDS
+  ).length;
+
+  const loops = unique.filter(isLoopResult);
+  loops.sort((a, b) => relevanceScore(b, term) - relevanceScore(a, term));
 
   return {
     query: term,
-    results: unique,
+    results: loops,
     errors,
     tookMs: Date.now() - started,
+    droppedLong,
+    limits: { maxSeconds: MAX_AUDIO_SECONDS, defaultLoopSeconds: DEFAULT_LOOP_SECONDS },
     filters: { ...filters },
   };
 }
