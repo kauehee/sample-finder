@@ -8,8 +8,17 @@ Agregador de busca de **samples, loops e áudios gratuitos**: você digita o que
 |---|---|---|---|
 | **Internet Archive** | Samples, loops, packs e áudios CC0/Creative Commons | Direto | Nenhuma (funciona de cara) |
 | **Looperman** | Loops de produtores (drums, bass, vocal...) com BPM/gênero | Direto | Nenhuma |
-| **FreeSound** | One-shots e efeitos sonoros (CC) | Preview aqui; download exige login no site | Opcional: `FSOUND_API_KEY` |
-| **Loopmasters** | Packs **gratuitos** da loja (seção Free Samples) | Preview do demo aqui; download grátis via carrinho no site | Nenhuma |
+| **FreeSound** | One-shots e efeitos sonoros (CC) | Preview baixável direto no app (via proxy) | Opcional: `FSOUND_API_KEY` |
+| **Loopmasters** | Packs **gratuitos** da loja (seção Free Samples) | Demo baixável direto no app; pack completo grátis via carrinho no site | Nenhuma |
+| **SampleRadar** | Packs completos em WAV do MusicRadar (~285 packs, sem cadastro) | Zip baixado direto no app (via proxy) | Nenhuma |
+
+## Catálogo de fontes (`/catalogo`)
+
+Página separada com as **58 plataformas** de samples gratuitos (selos, portais e acervos): busca por nome/gênero e link direto para cada fonte. Quatro delas estão **integradas na busca** (Internet Archive, FreeSound, Looperman, Loopmasters, SampleRadar); as demais são catálogo de consulta — os freebies delas ficam no site oficial (cadastro/carrinho da própria empresa).
+
+## Download universal
+
+Regra do app: **todo áudio que o Sample Finder encontra e toca, baixa pela própria plataforma** — nenhum download exige acessar o site de origem. Isso vale para as cinco fontes integradas (previews do FreeSound, demos do Loopmasters e zips do SampleRadar incluídos, via `/proxy`). Plataformas que só liberam arquivos por carrinho/conta no site oficial (Cymatics, W.A. Production, Black Octopus etc.) ficam no catálogo com link direto — automatizar carrinhos de terceiros violaria os termos desses sites, e re-hospedar os arquivos violaria as licenças.
 
 ## Rodar localmente
 
@@ -64,21 +73,24 @@ Limites honestos:
 ## Estrutura
 
 ```
-server.js                     # Express: /api/search + /proxy (streaming de áudio)
+server.js                     # Express: /api/search + /proxy (streaming de áudio) + /catalogo
 src/search.js                 # Orquestra as fontes, classifica e deduplica
 src/sources/internetArchive.js # API pública do Internet Archive (sem chave)
 src/sources/looperman.js      # Busca do Looperman via fluxo oficial do site (POST + CSRF)
 src/sources/freesound.js      # API v2 do FreeSound (chave opcional)
 src/sources/loopmasters.js    # Packs gratuitos do Loopmasters (seção Free Samples)
-public/                       # Interface (HTML/CSS/JS puros, sem build)
+src/sources/sampleradar.js    # Packs WAV do MusicRadar/SampleRadar (zips diretos)
+public/                       # Interface (HTML/CSS/JS puros, sem build) + catalogo.html
 ```
 
 ## Notas honestas sobre limites
 
 - **Licenças**: cada resultado exibe a licença (CC0, CC BY, etc.). Verifique antes de usar em lançamentos comerciais — CC BY exige atribuição; CC BY-NC proíbe uso comercial.
-- **Áudio via proxy local**: o preview e o download de todas as fontes passam por `/proxy` (whitelist: Looperman, FreeSound e Internet Archive — não é proxy aberto). Isso resolve duas limitações das fontes: proteção anti-hotlink do Looperman (exige `Referer` do próprio site) e os redirects/CDN do Internet Archive que quebram o player por CORS. O proxy repassa `Range` (seek no player) e o nome do arquivo no download.
+- **Áudio via proxy local**: o preview e o download de todas as fontes passam por `/proxy` (whitelist: Looperman, FreeSound, Loopmasters, SampleRadar e Internet Archive — não é proxy aberto). Isso resolve duas limitações das fontes: proteção anti-hotlink do Looperman (exige `Referer` do próprio site) e os redirects/CDN do Internet Archive que quebram o player por CORS. O proxy repassa `Range` (seek no player) e o nome do arquivo no download.
 - **Play exclusivo**: dar play em um resultado pausa automaticamente os outros.
-- **FreeSound**: o preview funciona no app; o download do arquivo completo exige login gratuito no próprio site.
+- **FreeSound**: o preview toca e baixa direto no app; o arquivo completo exige login gratuito no próprio site.
 - **Looperman**: os resultados vêm da busca oficial do site (mesmo fluxo que o navegador usa, incluindo token de sessão).
-- **Loopmasters**: é uma loja paga — o app inclui apenas o catálogo **gratuito** (seção Free Samples, ~12 packs). O preview é o demo oficial do pack; o download grátis é feito no site deles (carrinho + e-mail), então o card leva para a página do produto. Packs pagos nunca aparecem.
+- **Loopmasters**: é uma loja paga — o app inclui apenas o catálogo **gratuito** (seção Free Samples, ~12 packs). O demo oficial toca e baixa no app; o pack completo grátis é liberado no site deles (carrinho + e-mail), então o card leva para a página do produto. Packs pagos nunca aparecem.
+- **SampleRadar**: o hub do MusicRadar lista ~285 packs gratuitos; o app encontra o pack e baixa o zip direto do CDN deles, sem cadastro.
+- **Catálogo de 58 plataformas**: as fontes com freebies fechados em cadastro/carrinho (Cymatics, W.A. Production, Black Octopus etc.) aparecem no catálogo com link para o site oficial — o app não automatiza carrinhos de terceiros nem re-hospeda arquivos (violaria ToS/licenças).
 - **Disponibilidade**: se um site mudar o layout ou aplicar bloqueio anti-bot, o app degrada com elegância — exibe um aviso e entrega os resultados das outras fontes.

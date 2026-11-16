@@ -60,6 +60,7 @@ const AUDIO_HOSTS = new Map([
   ['looperman.com', 'https://www.looperman.com/'],
   ['cdn.freesound.org', 'https://freesound.org/'],
   ['demos.loopmasters.com', 'https://www.loopmasters.com/'],
+  ['cdn.mos.musicradar.com', 'https://www.musicradar.com/'],
 ]);
 
 function isAllowedHost(hostname) {
@@ -74,6 +75,10 @@ app.get('/api/filters', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: (err && err.message) || String(err) });
   }
+});
+
+app.get('/catalogo', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'catalogo.html'));
 });
 
 app.get('/api/health', (req, res) => {
@@ -107,7 +112,7 @@ app.get('/proxy', async (req, res) => {
   } catch {
     return res.status(400).end('URL inválida');
   }
-  if (!isAllowedHost(parsed.hostname) || !/\.(mp3|wav|ogg|flac|m4a|aac)(\?|$)/i.test(parsed.pathname)) {
+  if (!isAllowedHost(parsed.hostname) || !/\.(mp3|wav|ogg|flac|m4a|aac|zip)(\?|$)/i.test(parsed.pathname)) {
     return res.status(400).end('Host ou tipo de arquivo não permitido');
   }
 

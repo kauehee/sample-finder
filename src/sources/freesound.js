@@ -26,6 +26,7 @@ async function searchFreesound(term, { pageSize = 15, filters = {} } = {}) {
 
   return (data.results || []).map((s) => {
     const preview = (s.previews && (s.previews['preview-hq-mp3'] || s.previews['preview-lq-mp3'])) || null;
+    const filename = preview ? `${s.id}_preview.mp3` : null;
     return {
       id: `fs-${s.id}`,
       source: 'freesound',
@@ -34,7 +35,8 @@ async function searchFreesound(term, { pageSize = 15, filters = {} } = {}) {
       duration: s.duration || null,
       size: null,
       previewUrl: preview ? `/proxy?url=${encodeURIComponent(preview)}` : null,
-      downloadUrl: null,
+      downloadUrl: preview ? `/proxy?url=${encodeURIComponent(preview)}` : null,
+      filename,
       pageUrl: s.url || `https://freesound.org/s/${s.id}/`,
       license: licenseLabel(s.license),
       licenseUrl: s.license || null,

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Catálogo de fontes — Sample Finder</title>
+  <link rel="stylesheet" href="/style.css" />
+  <style>
+    .cat-hero { padding: 40px 20px 20px; text-align: center; }
+    .cat-hero h1 { font-size: 2rem; }
+    .cat-wrap { max-width: 860px; margin: 0 auto; padding: 8px 20px 60px; }
+    .cat-search { width: 100%; padding: 12px 16px; border-radius: 10px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 1rem; margin-bottom: 14px; }
+    .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; color: var(--muted); font-size: 0.9rem; }
+    .legend .ok::before { content: "● "; color: var(--green); }
+    .legend .out::before { content: "● "; color: var(--amber); }
+    .cat-item { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; display: flex; gap: 14px; align-items: flex-start; }
+    .cat-num { color: var(--muted); font-weight: 700; min-width: 26px; padding-top: 2px; }
+    .cat-body { flex: 1; }
+    .cat-body h3 { font-size: 1.05rem; margin-bottom: 4px; }
+    .cat-body h3 a { color: var(--text); text-decoration: none; }
+    .cat-body h3 a:hover { color: var(--accent-2); }
+    .cat-desc { color: var(--muted); font-size: 0.9rem; line-height: 1.45; }
+    .cat-badge { display: inline-block; margin-top: 8px; padding: 3px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; }
+    .cat-badge.ok { background: rgba(46, 204, 113, 0.12); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.35); }
+    .cat-badge.out { background: rgba(240, 180, 41, 0.12); color: var(--amber); border: 1px solid rgba(240, 180, 41, 0.35); }
+    .back { display: inline-block; margin-top: 18px; color: var(--accent-2); text-decoration: none; }
+    .back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="cat-hero">
+    <h1>Catálogo de <span class="grad">fontes de samples</span></h1>
+    <p class="subtitle">58 plataformas, gravadoras e acervos de samples gratuitos — consulte e abra a fonte que quiser.</p>
+  </div>
+  <div class="cat-wrap">
+    <input class="cat-search" id="catSearch" type="text" placeholder="Filtrar por nome, gênero ou descrição..." />
+    <div class="legend">
+      <span class="ok">Integrada na busca do Sample Finder</span>
+      <span class="out">Freebies/download no site oficial (cadastro ou carrinho da própria empresa)</span>
+    </div>
+    <div id="catList"></div>
+    <a class="back" href="/">← Voltar para a busca</a>
+  </div>
+  <script>
+    const DATA = [
+      { n: 1, name: "789ten", desc: "Plataforma e selo ligado a grandes nomes do Progressive House e EDM que libera pacotes de artistas gratuitamente.", url: "https://www.google.com/search?q=789ten+free+samples", status: "out" },
+      { n: 2, name: "99Sounds", desc: "Selo independente de sound design cinematográfico, texturas ambientes e baterias eletrônicas sem custo.", url: "https://99sounds.org/", status: "out" },
+      { n: 3, name: "Adsrsounds (Free Samples)", desc: "Portal de produção eletrônica com área dedicada a pacotes gratuitos de loops e presets de sintetizadores.", url: "https://www.adsrsounds.com/", status: "out" },
+      { n: 4, name: "AngelicVibes (Free Packs)", desc: "Focada em Trap, R&B e Hip-Hop moderno com vários pacotes gratuitos de melodias e baterias.", url: "https://angelicvibes.com/", status: "out" },
+      { n: 5, name: "Audentity Records", desc: "Selo holandês de Future House e Deep House com aba fixa de pacotes gratuitos, incluindo vocais originais.", url: "https://www.audentityrecords.com/", status: "out" },
+      { n: 6, name: "Audiotent", desc: "Selo britânico de Melodic Techno e Progressive House com loops de sintetizadores analógicos gratuitos.", url: "https://www.audiotent.com/", status: "out" },
+      { n: 7, name: "BandLab Sounds", desc: "Catálogo gratuito e ilimitado com milhares de loops e one-shots criados por produtores profissionais.", url: "https://www.bandlab.com/sounds", status: "out" },
+      { n: 8, name: "Bedroom Producers Blog (BPB)", desc: "Portal de curadoria que reúne diariamente os melhores pacotes gratuitos lançados por gravadoras e fabricantes.", url: "https://bedroomproducersblog.com/", status: "out" },
+      { n: 9, name: "Black Octopus Sound", desc: "Forte em Bass Music, Dubstep e Trance; oferece um pacote gratuito de boas-vindas de 2 GB com loops e vocais.", url: "https://blackoctopus-sound.com/", status: "out" },
+      { n: 10, name: "Bunker Samples", desc: "Especializado em texturas sombrias, drones analógicos e percussões industriais com opções gratuitas.", url: "https://bunkersamples.com/", status: "out" },
+      { n: 11, name: "Certified Audio", desc: "Selo especializado em Afro House, Tech House e Minimal com pacotes de demonstração gratuitos.", url: "https://www.google.com/search?q=Certified+Audio+samples+free", status: "out" },
+      { n: 12, name: "College Music", desc: "Gravadora britânica de Lo-Fi Hip-Hop e Chillhop que disponibiliza pacotes gratuitos de baterias orgânicas e teclas.", url: "https://www.collegemusic.co.uk/", status: "out" },
+      { n: 13, name: "Converse Rubber Tracks (Archive)", desc: "Acervo histórico com milhares de stems e loops de instrumentos acústicos gravados em estúdio sob licença livre — hospedado no Internet Archive.", url: "https://archive.org/details/converserubbertracks", status: "out" },
+      { n: 14, name: "Cymatics (Free Downloads)", desc: "Loja com cofre gratuito robusto de pacotes de trap, lo-fi, house e hip-hop, incluindo arquivos MIDI.", url: "https://cymatics.fm/", status: "out" },
+      { n: 15, name: "Datacode", desc: "Focada em Techno, Minimal e Tech House; disponibiliza Free Demos diretas em quase todos os lançamentos.", url: "https://www.google.com/search?q=Datacode+records+free+demos", status: "out" },
+      { n: 16, name: "Defected Records", desc: "Gravadora lendária de House Music que libera samplers comemorativos e acapellas clássicas para assinantes.", url: "https://defected.com/", status: "out" },
+      { n: 17, name: "Disciple Recordings (Disciple Samples)", desc: "Referência em Dubstep, Riddim e Bass Music; libera pacotes gratuitos criados pelos artistas do selo.", url: "https://disciplerecs.com/", status: "out" },
+      { n: 18, name: "Freesound", desc: "Banco colaborativo gigante sob licenças Creative Commons, ideal para gravações de campo, texturas e efeitos sonoros.", url: "https://freesound.org/", status: "ok" },
+      { n: 19, name: "Freesounds.it", desc: "Agregador que organiza label samplers gratuitos de vários selos eletrônicos em um só lugar.", url: "https://freesounds.it/", status: "out" },
+      { n: 20, name: "Freshly Squeezed Samples", desc: "Referência mundial em Uplifting Trance, Progressive e Synthwave; oferece demos gratuitas em seus pacotes.", url: "https://www.freshlysqueezedsamples.com/", status: "out" },
+      { n: 21, name: "Function Loops", desc: "Selo muito ativo em Psytrance, Vocal Pop, Techno e Reggaeton com dezenas de pacotes gratuitos completos.", url: "https://www.functionloops.com/", status: "out" },
+      { n: 22, name: "Futurephonic", desc: "Selo britânico de Psytrance moderno e Progressive Psy com pacotes gratuitos de kicks e baixos.", url: "https://futurephonic.co.uk/", status: "out" },
+      { n: 23, name: "Ghosthack (Freebies)", desc: "Loja com seção fixa de pacotes gratuitos focados em música eletrônica, vocais e trilhas.", url: "https://www.ghosthack.de/", status: "out" },
+      { n: 24, name: "Glitchmachines", desc: "Especializada em IDM, Glitch e som experimental; oferece um Free Bundle permanente com centenas de sons.", url: "https://glitchmachines.com/", status: "out" },
+      { n: 25, name: "Hospital Records", desc: "Gigante britânica do Drum & Bass que libera sample packs gratuitos e stems em datas comemorativas e concursos.", url: "https://www.hospitalrecords.com/", status: "out" },
+      { n: 26, name: "HY2ROGEN", desc: "Especializada em Tech House, Tribal e Minimal; libera arquivos Free Taster em quase todos os pacotes.", url: "https://hy2rogen.com/", status: "out" },
+      { n: 27, name: "Industrial Strength Records", desc: "Gravadora histórica de Hardcore, Gabber, Industrial e Acid com seção gratuita de baterias pesadas e loops analógicos.", url: "https://www.google.com/search?q=Industrial+Strength+Records+free+samples", status: "out" },
+      { n: 28, name: "KAN Samples", desc: "Selo especializado em Neurofunk, Drum & Bass e Halftime com pacotes gratuitos de baixos pesados e baterias.", url: "https://www.google.com/search?q=KAN+Samples+free+pack", status: "out" },
+      { n: 29, name: "KSHMR / Dharma Worldwide", desc: "O selo de KSHMR disponibiliza starter packs e amostras de instrumentos étnicos e eletrônicos em seu portal.", url: "https://www.kshmr.com/", status: "out" },
+      { n: 30, name: "LANDR Samples", desc: "Oferece seleção rotativa de pacotes gratuitos gravados por artistas reais mediante conta gratuita.", url: "https://www.landr.com/samples", status: "out" },
+      { n: 31, name: "Lofi Weekly", desc: "Selo e comunidade que lança toda semana um pacote gratuito de loops de Lo-Fi, Jazz e Chill.", url: "https://lofiweekly.com/", status: "out" },
+      { n: 32, name: "Looperman", desc: "Maior comunidade gratuita do mundo para troca de loops e acapellas livres de royalties filtrados por BPM e tom.", url: "https://www.looperman.com/", status: "ok" },
+      { n: 33, name: "Loopmasters (Free Samples)", desc: "Vitrine que reúne Label Samplers gratuitos oficiais de dezenas de gravadoras independentes.", url: "https://www.loopmasters.com/", status: "ok" },
+      { n: 34, name: "Luftrum", desc: "Especializado em Ambient, Drone e trilhas cinematográficas; oferece pacotes gratuitos de texturas espaciais.", url: "https://www.luftrum.com/", status: "out" },
+      { n: 35, name: "Mind Flux", desc: "Selo londrino de Minimal, Deep Tech e Techno underground com página dedicada a loops e racks gratuitos.", url: "https://www.google.com/search?q=Mind+Flux+free+loops", status: "out" },
+      { n: 36, name: "Nano Records", desc: "Gravadora tradicional de Psytrance que libera amostras gratuitas de rolling basslines e efeitos psicodélicos.", url: "https://www.nanorecords.co.uk/", status: "out" },
+      { n: 37, name: "Prime Loops", desc: "Selo veterano de Dubstep, Trap, Hip-Hop e Grime com uma seção dedicada a free sample packs.", url: "https://www.primeloops.com/", status: "out" },
+      { n: 38, name: "Producer Loops (Freebies)", desc: "Distribuidora gigante que reúne amostras gratuitas de centenas de gravadoras e estúdios parceiros.", url: "https://www.producerloops.com/", status: "out" },
+      { n: 39, name: "Production Music Live (PML)", desc: "Referência na sonoridade Melodic House & Techno (estilo Anjunadeep/Afterlife) com pacotes gratuitos de percussão e arps.", url: "https://www.productionmusiclive.com/", status: "out" },
+      { n: 40, name: "RAM Records", desc: "Gravadora histórica fundada por Andy C; disponibiliza stems originais e pacotes promocionais de breaks e baixos.", url: "https://www.ramrecords.com/", status: "out" },
+      { n: 41, name: "Revealed Recordings", desc: "Gravadora de Hardwell; oferece a série gratuita Revealed Producer Starter Pack para Big Room e Progressive House.", url: "https://www.revealedrecordings.com/", status: "out" },
+      { n: 42, name: "Riemann Kollektion", desc: "Referência alemã em Hard Techno, Industrial e Peak Time; libera pacotes gratuitos de kicks e rumble basslines.", url: "https://riemannkollektion.com/", status: "out" },
+      { n: 43, name: "Sample Focus", desc: "Buscador de sons avulsos enviados pela comunidade com sistema de créditos semanais gratuitos.", url: "https://samplefocus.com/", status: "out" },
+      { n: 44, name: "Sample Magic (via Splice / Landr Freebies)", desc: "Selo britânico histórico de House, Nu-Disco e Minimal que mantém pacotes promocionais gratuitos em portais parceiros.", url: "https://www.samplemagic.com/", status: "out" },
+      { n: 45, name: "Sample Tools by Cr2", desc: "Braço de samples da gravadora Cr2 Records; oferece freebies de Bass House, Tech House e DnB.", url: "https://sampletoolsbycr2.com/", status: "out" },
+      { n: 46, name: "Samplephonics", desc: "Selo britânico com grande acervo gratuito de Electronica, IDM, Breaks e texturas granulares.", url: "https://www.samplephonics.com/", status: "out" },
+      { n: 47, name: "SampleRadar (MusicRadar)", desc: "Acervo editorial com dezenas de pacotes completos em WAV 24-bit organizados por estilo sem necessidade de cadastro.", url: "https://www.musicradar.com/news/tech/free-music-samples-royalty-free-loops-hits-and-multis-to-download-sampleradar", status: "ok" },
+      { n: 48, name: "Shogun Audio", desc: "Selo de Friction; distribui starter packs gratuitos de Drum & Bass através de suas campanhas e da plataforma Elevate Audio.", url: "https://www.shogunaudio.co.uk/", status: "out" },
+      { n: 49, name: "Singomakers", desc: "Forte em Tech House, Bass House e Slap House; oferece Free Demos completas em todos os lançamentos do site.", url: "https://singomakers.com/", status: "out" },
+      { n: 50, name: "Soho Music", desc: "Gravadora e selo focado em UK Garage, Deep House e Bassline com label samplers gratuitos.", url: "https://www.google.com/search?q=Soho+Music+label+free+samples", status: "out" },
+      { n: 51, name: "Spitfire Audio LABS", desc: "Plataforma de instrumentos virtuais gratuitos (VST) de estúdio para você criar seus próprios loops orgânicos.", url: "https://labs.spitfireaudio.com/", status: "out" },
+      { n: 52, name: "Toolroom Records (Toolroom Academy)", desc: "Ícone do Tech House moderno; disponibiliza samplers e materiais de produção gratuitos via newsletter.", url: "https://toolroomrecords.com/", status: "out" },
+      { n: 53, name: "Touch Loops", desc: "Selo britânico focado em Deep House, Jazz House e batidas orgânicas gravadas em estúdio com excelente seção gratuita.", url: "https://www.touchloops.com/", status: "out" },
+      { n: 54, name: "Underground Sound", desc: "Selo focado em Peak Time Techno, Acid e Hypnotic Techno com seção de pacotes gratuitos e demos.", url: "https://www.google.com/search?q=Underground+Sound+techno+label+free", status: "out" },
+      { n: 55, name: "Unison Audio (Free Packs)", desc: "Disponibiliza coleções gratuitas de acordes MIDI, drum loops e one-shots voltados para música eletrônica e pop.", url: "https://unison.audio/", status: "out" },
+      { n: 56, name: "Vengeance Sound", desc: "Clássica no Trance e Electro House; mantém pacotes gratuitos promocionais na área de downloads do site.", url: "https://vengeance-sound.com/", status: "out" },
+      { n: 57, name: "W. A. Production", desc: "Gravadora e desenvolvedora de EDM, Future Bass e House com extensa área gratuita de construction kits.", url: "https://www.waproduction.com/", status: "out" },
+      { n: 58, name: "ZTEKNO", desc: "Especializada em Melodic Techno e Peak Time; oferece um botão Free Demo em praticamente todos os pacotes do catálogo.", url: "https://ztekno.com/", status: "out" },
+    ];
+
+    const listEl = document.getElementById('catList');
+    const searchEl = document.getElementById('catSearch');
+
+    function esc(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    function render(q) {
+      const ql = q.toLowerCase();
+      const items = DATA.filter((d) => !ql || `${d.name} ${d.desc}`.toLowerCase().includes(ql));
+      listEl.innerHTML = items.map((d) => `
+        <div class="cat-item">
+          <div class="cat-num">${d.n}</div>
+          <div class="cat-body">
+            <h3><a href="${esc(d.url)}" target="_blank" rel="noopener">${esc(d.name)}</a></h3>
+            <p class="cat-desc">${esc(d.desc)}</p>
+            <span class="cat-badge ${d.status === 'ok' ? 'ok' : 'out'}">${d.status === 'ok' ? 'Integrada na busca do Sample Finder' : 'Download/freebies no site oficial'}</span>
+          </div>
+        </div>`).join('') || '<p class="subtitle">Nenhuma fonte encontrada com esse filtro.</p>';
+    }
+
+    searchEl.addEventListener('input', () => render(searchEl.value));
+    render('');
+  </script>
+</body>
+</html>
